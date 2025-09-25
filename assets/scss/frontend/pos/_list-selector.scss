@@ -1,0 +1,29 @@
+.list-selector {
+    display        : flex;
+    flex-direction : column;
+    gap            : 15px;
+    margin         : 15px 0;
+
+    .list-selector__item {
+        font-weight : 600;
+        padding     : 13px 15px;
+        background  : #fff;
+        color       : #000;
+        border      : 1px solid #e5e5e5;
+        cursor      : pointer;
+        display     : flex;
+        align-items : center;
+        gap         : 15px;
+        transition  : all .2s ease-in-out;
+
+        &.selected, &:hover {
+            filter       : none;
+            color        : var(--primary);
+            border-color : var(--primary);
+        }
+
+        .list-selector__item__icon {
+            font-size : 1.5em;
+        }
+    }
+}

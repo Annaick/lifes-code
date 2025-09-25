@@ -1,0 +1,20 @@
+{
+  "rootDir": "../../",
+  "collectCoverageFrom": [
+    "app/**/*.js",
+    "!**/node_modules/**",
+    "!**/test/**"
+  ],
+  "moduleDirectories": ["node_modules", "<rootDir>/app"],
+  "setupFiles": [
+    "<rootDir>/node_modules/@wordpress/jest-preset-default/scripts/setup-globals.js",
+    "<rootDir>/tests/js/setup-globals.js"
+  ],
+  "preset": "@wordpress/jest-preset-default",
+  "testPathIgnorePatterns": [
+    "/node_modules/",
+    "<rootDir>/.*/build/",
+    "<rootDir>/.*/build-module/"
+  ],
+  "verbose": true
+}

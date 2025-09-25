@@ -1,0 +1,20 @@
+@forward "fields/input";
+@forward "fields/select";
+@forward "fields/switch";
+
+.pos-field__helper-text {
+    opacity    : .7;
+    font-size  : 0.85em;
+    text-align : left;
+    margin     : 3px 0 0 0;
+
+    &.error {
+        opacity : 1;
+        color   : var(--red);
+    }
+}
+
+.inline-error {
+    color     : var(--red);
+    font-size : 0.85rem;
+}

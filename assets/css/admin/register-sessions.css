@@ -1,0 +1,172 @@
+
+.yith-plugin-ui #yith-pos-register-session-list .tablenav {
+	margin-top : 0;
+}
+
+/**
+ * Single Register Session
+ */
+
+#yith-pos-register-session-edit.yith-plugin-fw-panel-custom-tab-container > h2 {
+	padding-bottom : 5px;
+}
+
+.yith-pos-register-session__description {
+	margin-bottom : 10px;
+}
+
+#yith-pos-register-session-edit h3 {
+	color     : #333;
+	margin    : 2em 0 1em;
+	font-size : 14px;
+}
+
+.yith-pos-register-session-contents,
+.yith-pos-register-session-actions {
+	max-width : 600px;
+}
+
+.yith-pos-register-session-info {
+	padding : 7px 0;
+}
+
+.yith-pos-register-session-info__title {
+	color : #777;
+}
+
+.yith-pos-register-session-info__title:after {
+	content : ': ';
+}
+
+.yith-pos-register-session-info__content {
+	display     : flex;
+	align-items : center;
+	gap         : 5px;
+	margin      : 5px 0 10px;
+}
+
+.yith-pos-register-session-info__content .yith-plugin-fw-datepicker-field-wrapper {
+	display  : inline-block;
+	position : relative;
+}
+
+.yith-pos-register-session-info__content .yith-plugin-fw-datepicker-field-wrapper input {
+	width         : 100%;
+	padding-right : 30px;
+}
+
+.yith-pos-register-session-info__content .yith-plugin-fw-datepicker-field-wrapper .yith-icon.yith-icon--right-overlay {
+	position : absolute;
+	left     : auto;
+	right    : 10px;
+	top      : 0;
+	width    : auto;
+}
+
+#yith-pos-register-session-edit .form-field .hour, #yith-pos-register-session-edit .form-field .minute {
+	width     : 4.5em;
+	min-width : 0;
+}
+
+#yith-pos-register-session-edit textarea {
+	min-height : 100px;
+	width      : 100%;
+}
+
+.yith-pos-register-session-cash-in-hand-table__wrapper,
+.yith-pos-register-session-reports-table__wrapper {
+	margin-top    : 10px;
+	border        : 1px solid #d8d8d8;
+	border-radius : 8px;
+	overflow      : hidden;
+}
+
+.yith-pos-register-session-cash-in-hand-table,
+.yith-pos-register-session-reports-table {
+	width           : 100%;
+	border-collapse : collapse;
+	font-weight     : 600;
+	color           : #666;
+}
+
+.yith-pos-register-session-cash-in-hand-table th,
+.yith-pos-register-session-cash-in-hand-table td,
+.yith-pos-register-session-reports-table th,
+.yith-pos-register-session-reports-table td {
+	padding     : 12px;
+	font-weight : inherit;
+}
+
+.yith-pos-register-session-cash-in-hand-table th,
+.yith-pos-register-session-reports-table th {
+	text-align : left;
+}
+
+.yith-pos-register-session-cash-in-hand-table td,
+.yith-pos-register-session-reports-table td {
+	text-align : right;
+}
+
+.yith-pos-register-session-cash-in-hand-table__report.positive {
+	color : #a0a700;
+}
+
+.yith-pos-register-session-cash-in-hand-table__report.negative {
+	color : #990225;
+}
+
+.yith-pos-register-session-cash-in-hand-table__report__info {
+	color : #999;
+}
+
+.yith-pos-register-session-cash-in-hand-table__report__reason.no-reason {
+	color       : #bbb;
+	font-weight : 400;
+}
+
+.yith-pos-register-session-reports-table__report-total_sales th,
+.yith-pos-register-session-reports-table__report-total_sales td,
+.yith-pos-register-session-reports-table__report-cash_total th,
+.yith-pos-register-session-reports-table__report-cash_total td {
+	border-top : 2px solid #f1f1f1;
+}
+
+.yith-pos-register-session-reports-table__report-total_sales {
+	color : #a0a700;
+}
+
+.yith-pos-register-session-reports-table__report-cash_total {
+	color : #09adaa;
+}
+
+.yith-pos-register-session-actions {
+	text-align : right;
+	margin-top : 20px;
+}
+
+.yith-pos-register-session-details {
+	display               : grid;
+	grid-gap              : 15px;
+	grid-template-columns : repeat(auto-fill, 250px);
+}
+
+.yith-pos-register-session-detail {
+	display        : flex;
+	flex-direction : column;
+	padding        : 15px;
+	background     : #f6f6f6;
+}
+
+.yith-pos-register-session-detail:nth-child(3n+2) {
+	background : #ededed;
+}
+
+.yith-pos-register-session-detail:nth-child(3n+3) {
+	background : #e2e2e2;
+}
+
+.yith-pos-register-session-detail__label {
+	margin-bottom : 10px;
+	font-weight   : 600;
+	font-size     : 1.1em;
+}

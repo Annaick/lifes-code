@@ -1,0 +1,24 @@
+#yith-pos-order-info {
+    .inside {
+        margin: 0;
+        padding: 16px;
+        line-height: 1.5;
+    }
+
+    .yith-pos-info__list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .yith-pos-info {
+        padding: 16px;
+        background: #f4f4f4;
+    }
+
+    .yith-pos-info__label {
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+}

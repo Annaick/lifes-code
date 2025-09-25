@@ -1,0 +1,27 @@
+.skeleton {
+    display                   : inline-block;
+    animation-duration        : 1s;
+    animation-fill-mode       : forwards;
+    animation-iteration-count : infinite;
+    animation-name            : yithPosSkeletonShimmer;
+    animation-timing-function : steps(10, end);
+    animation-direction       : alternate;
+
+    &.skeleton--text {
+        height        : 8px;
+        border-radius : 3px;
+    }
+
+    &.skeleton--title {
+        height        : 12px;
+        border-radius : 3px;
+    }
+
+    &.skeleton--rounded {
+        border-radius : 3px;
+    }
+
+    &.skeleton--circle {
+        border-radius : 50%;
+    }
+}

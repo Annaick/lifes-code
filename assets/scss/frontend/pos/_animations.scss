@@ -1,0 +1,43 @@
+@keyframes yithPosSkeletonShimmer {
+    0% {
+        opacity : 1;
+    }
+
+    100% {
+        opacity : .5;
+    }
+}
+
+@keyframes yithPosFadeIn {
+    from {
+        opacity : 0;
+    }
+
+    to {
+        opacity : 1;
+    }
+}
+
+@keyframes yithPosSlideDown {
+    from {
+        opacity   : 0;
+        transform : translateY(-10px);
+    }
+
+    to {
+        opacity   : 1;
+        transform : translateY(0);
+    }
+}
+
+@keyframes yithPosSlideUp {
+    from {
+        opacity   : 0;
+        transform : translateY(10px);
+    }
+
+    to {
+        opacity   : 1;
+        transform : translateY(0);
+    }
+}

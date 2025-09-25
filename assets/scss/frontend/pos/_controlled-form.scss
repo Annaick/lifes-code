@@ -1,0 +1,26 @@
+.controlled-form {
+
+    .controlled-form__fields {
+        display               : grid;
+        grid-template-columns : 1fr;
+        grid-gap              : 10px;
+    }
+
+    .controlled-form__field__label {
+        display     : block;
+        padding     : 7px 0;
+        font-size   : 0.9em;
+        font-weight : 600;
+
+        .required {
+            margin-left : 5px;
+        }
+    }
+
+    .controlled-form__error {
+        color         : var(--red);
+        font-size     : .9em;
+        font-weight   : 600;
+        margin-bottom : 15px;
+    }
+}

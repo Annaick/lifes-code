@@ -1,0 +1,96 @@
+/**
+ * Input Field
+ */
+.pos-input-field {
+    position    : relative;
+    align-items : center;
+    font-size   : .8rem;
+}
+
+.pos-input-field__field {
+    transition : all 0.3s ease;
+    font-size  : 1em;
+    padding    : 0 15px;
+    height     : 40px;
+    outline    : none;
+    width      : 100%;
+}
+
+.pos-input-field--outlined {
+    .pos-input-field__field {
+        background : var(--background);
+        color      : var(--background_contrast);
+        border     : 1px solid var(--border_color);
+
+        &:focus {
+            border-color : var(--primary);
+        }
+    }
+}
+
+.pos-input-field--ghost {
+    .pos-input-field__field {
+        background : transparent;
+        border     : none;
+
+        &:focus + .pos-input-field__left-icon {
+            color : inherit;
+        }
+    }
+
+    .pos-input-field__left-icon {
+        color   : inherit;
+        opacity : .6;
+    }
+}
+
+
+.pos-input-field.error .pos-input-field__field {
+    border : 1px solid var(--red);
+}
+
+.pos-input-field__left-icon,
+.pos-input-field__right-icon {
+    font-size       : 16px;
+    font-weight     : 400;
+    opacity         : 0.4;
+    width           : 35px;
+    height          : 100%;
+    pointer-events  : none;
+    color           : inherit;
+    position        : absolute;
+    top             : 50%;
+    transform       : translateY(-50%);
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+}
+
+.pos-input-field__left-icon {
+    width   : 40px;
+    opacity : 1;
+    left    : 0;
+}
+
+.pos-input-field__right-icon {
+    right : 0;
+}
+
+.pos-input-field--with-left-icon .pos-input-field__field {
+    padding-left : 40px;
+}
+
+.pos-input-field--with-right-icon .pos-input-field__field {
+    padding-right : 35px;
+}
+
+.pos-input-field__field:focus + .pos-input-field__left-icon {
+    color : var(--primary);
+}
+
+.pos-input-field--allow-clear .pos-input-field__right-icon.clear {
+    font-size      : 10px;
+    opacity        : 1;
+    cursor         : pointer;
+    pointer-events : all;
+}

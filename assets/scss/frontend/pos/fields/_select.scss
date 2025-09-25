@@ -1,0 +1,160 @@
+/**
+ * Select field
+ */
+.pos-select-field {
+    cursor     : pointer;
+    text-align : left;
+    font-size  : .8rem;
+}
+
+.pos-select-field__toggle {
+    color           : var(--background_contrast);
+    transition      : all 0.3s ease;
+    font-size       : 1em;
+    outline         : none;
+    padding         : 0 10px 0 15px;
+    height          : 40px;
+    display         : flex;
+    align-items     : center;
+    justify-content : space-between;
+    user-select     : none;
+    gap             : 15px;
+}
+
+.pos-select-field__toggle__label,
+.pos-select-field__toggle__placeholder {
+    white-space   : nowrap;
+    overflow      : hidden;
+    text-overflow : ellipsis;
+    min-width     : 0;
+    flex          : 1;
+}
+
+.pos-select-field__toggle__placeholder {
+    opacity : .5;
+}
+
+.pos-select-field__toggle__left-icon-text,
+.pos-select-field__option__icon-text {
+    font-weight : 600;
+    font-size   : 1.1em;
+}
+
+.pos-select-field__toggle__icon {
+    font-size : .8em;
+    margin    : 1px 3px 0 0;
+}
+
+.pos-select-field__toggle__icon-clear {
+    font-size : .8em;
+}
+
+.pos-select-field--outlined {
+    .pos-select-field__toggle {
+        background : var(--background);
+        border     : 1px solid var(--border_color);
+    }
+
+    &.opened .pos-select-field__toggle {
+        border-color : var(--primary);
+    }
+}
+
+.pos-select-field--ghost {
+    .pos-select-field__toggle {
+        background : transparent;
+        border     : none;
+    }
+
+    &.opened .pos-select-field__toggle {
+        box-shadow : 0 0 0 1px var(--primary);
+    }
+
+    .pos-select-field__toggle__icon {
+        visibility : hidden;
+    }
+
+    &:hover .pos-select-field__toggle__icon {
+        visibility : visible;
+    }
+}
+
+.pos-select-field.error .pos-select-field__toggle {
+    border-color : var(--red);
+}
+
+.pos-select-field__clear-icon {
+    font-size : 17px;
+}
+
+.pos-select-field__popover {
+    padding   : 0;
+    overflow  : hidden;
+    font-size : .8rem;
+
+    &.multiple {
+        .pos-select-field__option {
+            display     : flex;
+            align-items : center;
+            white-space : nowrap;
+
+            &:before {
+                content      : "\e901";
+                font-family  : 'yith-pos-icon';
+                margin-right : 7px;
+                opacity      : .5;
+                font-size    : 1.3em;
+            }
+
+            &.selected:before {
+                content : "\e900";
+                opacity : 1;
+                color   : var(--primary);
+            }
+        }
+    }
+}
+
+.pos-select-field__options {
+    max-height  : 207px;
+    overflow-y  : auto;
+    user-select : none;
+}
+
+.pos-select-field__option {
+    padding     : 5px 13px;
+    line-height : 1.75;
+    cursor      : pointer;
+    display     : flex;
+    align-items : center;
+    gap         : 15px;
+
+    &:first-child {
+        margin-top : 5px;
+    }
+
+    &:last-child {
+        margin-bottom : 5px;
+    }
+
+    &.selected,
+    &:hover {
+        background : var(--dropdown_highlight);
+        color      : var(--dropdown_contrast);
+    }
+}
+
+.pos-select-field__no-results {
+    padding : 8px 16px;
+    opacity : .7;
+}
+
+.pos-select-field__footer {
+    padding : 0 15px 15px;
+}
+
+.pos-select-field.multiple {
+    .pos-select-field__toggle__label {
+        font-size : .85em;
+    }
+}

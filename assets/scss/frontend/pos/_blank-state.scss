@@ -1,0 +1,39 @@
+.blank-state {
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+    height          : 100%;
+    width           : 100%;
+    flex-direction  : column;
+
+    .blank-state__icon {
+        font-size     : 100px;
+        opacity       : .4;
+        margin-bottom : 20px;
+    }
+
+    .blank-state__message {
+        font-size   : 2em;
+        font-weight : 500;
+        opacity     : .5;
+    }
+
+    .blank-state__actions {
+        margin-top : 40px;
+    }
+
+    &.blank-state--small {
+        .blank-state__icon {
+            font-size     : 50px;
+            margin-bottom : 10px;
+        }
+
+        .blank-state__message {
+            font-size : 1.2em;
+        }
+
+        .blank-state__actions {
+            margin-top : 30px;
+        }
+    }
+}

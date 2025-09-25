@@ -1,0 +1,17 @@
+.dropdown {
+}
+
+.dropdown__content {
+    max-width  : 100%;
+    background : var(--dropdown_background);
+    color      : var(--dropdown_contrast);
+    max-height : 100vh;
+    box-shadow : 1px 2px 18px 0 var(--shadow_color);
+    animation  : yithPosSlideDown 0.4s forwards;
+    padding    : 15px;
+    border     : 1px solid var(--border_color);
+}
+
+.dropdown__content[data-y-pos="top"] {
+    animation : yithPosSlideUp 0.4s forwards;
+}

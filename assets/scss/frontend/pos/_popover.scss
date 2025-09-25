@@ -1,0 +1,7 @@
+.popover {
+    position       : absolute;
+    z-index        : 9999999;
+    display        : flex;
+    flex-direction : column;
+    height         : fit-content;
+}

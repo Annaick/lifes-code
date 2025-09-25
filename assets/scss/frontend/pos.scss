@@ -1,0 +1,20 @@
+@forward "pos/variables";
+@forward "pos/animations";
+
+@forward "pos/blank-state";
+@forward "pos/buttons";
+@forward "pos/list-selector";
+@forward "pos/customer";
+@forward "pos/controlled-form";
+@forward "pos/dropdown";
+@forward "pos/popover";
+@forward "pos/payments-and-shippings";
+@forward "pos/skeleton";
+
+@forward "pos/fields";
+@forward "pos/app";
+
+@forward "pos/scrollbars";
+
+@forward "pos/main"; // Old CSS stylesheet. todo: split in different files.
+

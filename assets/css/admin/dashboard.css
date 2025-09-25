@@ -1,0 +1,49 @@
+.yith-plugins_page_yith_pos_panel #wpbody {
+    margin-top : 0;
+}
+
+#yith-pos-admin-root {
+    min-height : 300px;
+}
+
+.yith-pos-dashboard__leaderboards {
+    display               : grid;
+    grid-template-columns : 1fr 1fr;
+    grid-gap              : 24px;
+}
+
+.yith-pos-dashboard__leaderboards .woocommerce-table {
+    margin-bottom: 0;
+}
+
+.yith-pos-dashboard .woocommerce-filters .woocommerce-dropdown-button {
+    border: 1px solid rgb(117, 117, 117);
+    height: unset;
+    padding: unset;
+    border-radius: var(--yith-field-border-radius);
+
+}
+
+.yith-pos-dashboard .woocommerce-filters .woocommerce-segmented-selection__item label {
+    padding-left: 0;
+    width: 100%;
+}
+  
+.yith-pos-dashboard .woocommerce-filters .woocommerce-segmented-selection__item label:before {
+    display: none;
+}
+
+.yith-pos-dashboard .woocommerce-calendar .woocommerce-calendar__input-text {
+    padding-left: 30px;
+}
+
+@media( max-width: 1200px ){
+    .yith-pos-dashboard__leaderboards {
+        grid-template-columns : 1fr;
+        grid-gap: 0;
+    }
+
+    .yith-pos-dashboard__leaderboards .woocommerce-table:not(:last-of-type) {
+        margin-bottom: 24px;
+    } 
+}

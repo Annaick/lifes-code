@@ -1,0 +1,162 @@
+.customer-controller {
+    min-width      : 600px;
+    display        : flex;
+    flex-direction : column;
+    flex           : 1;
+    min-height     : 0;
+
+    .customer-controller__profile-alternatives {
+        font-size   : .9em;
+        text-align  : center;
+        margin-top  : 15px;
+        font-weight : 600;
+    }
+
+    .list-selector__item__icon.yith-pos-icon-create-user {
+        font-size : 29px;
+        margin    : -5px -8px -5px 0;
+    }
+}
+
+.customer-selector {
+    margin-top : 10px;
+
+    .customer-selector__message {
+        display     : inline-block;
+        margin      : 8px 5px 0 0;
+        font-size   : 0.9em;
+        font-weight : 600;
+
+        &.customer-selector__message--not-found {
+            color : var(--red);
+        }
+    }
+
+    .link {
+        font-size : 0.9em;
+    }
+
+    .customer-selector__results {
+        margin     : 10px 0;
+        border     : 1px solid var(--primary);
+        box-shadow : 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    }
+
+    .customer-selector__result {
+        padding     : 10px;
+        color       : #000;
+        font-weight : 600;
+        font-size   : 0.9em;
+        cursor      : pointer;
+        display     : flex;
+        gap         : 10px;
+        align-items : center;
+
+        .customer-selector__result__image {
+            height : 40px;
+        }
+
+        &:hover {
+            color            : var(--primary);
+            background-color : var(--extra-light-grey);
+        }
+    }
+}
+
+.current-customer {
+    width       : 100%;
+    border      : 1px solid var(--border_color);
+    padding     : 10px;
+    display     : flex;
+    align-items : center;
+    gap         : 10px;
+
+    .avatar {
+        height : 40px;
+    }
+
+    .name {
+        flex : 1;
+    }
+
+    .remove, .clear {
+        cursor       : pointer;
+        font-size    : .9em;
+        display      : flex;
+        align-items  : center;
+        gap          : 5px;
+        font-weight  : 600;
+        margin-right : 10px;
+
+        i {
+            font-size  : .8em;
+            margin-top : 2px;
+        }
+    }
+
+    .remove {
+        color : var(--red);
+    }
+
+    .clear {
+        opacity : .5;
+    }
+}
+
+.customer-info-box {
+    background-color : var(--extra-light-grey);
+    padding          : 15px;
+    margin           : 15px 0;
+    font-size        : 0.9em;
+    line-height      : 1;
+    border           : 1px solid var(--border-grey);
+    position         : relative;
+    cursor           : pointer;
+    display          : flex;
+    flex-direction   : column;
+    gap              : 10px;
+
+    .customer-info-box__edit {
+        position  : absolute;
+        top       : 10px;
+        right     : 10px;
+        font-size : 1em;
+    }
+
+    .customer-info-box__error {
+        color       : var(--red);
+        font-size   : .95em;
+        font-weight : 600;
+    }
+}
+
+.controlled-form.customer-form {
+    width          : 700px;
+    max-width      : 100%;
+    display        : flex;
+    flex-direction : column;
+    min-height     : 0;
+
+    .controlled-form__fields {
+        grid-template-columns : 1fr 1fr;
+        overflow-y            : auto;
+        height                : 100%;
+        margin-bottom         : 15px;
+    }
+
+    .controlled-form__field-root__billing_address_1,
+    .controlled-form__field-root__billing_address_2,
+    .controlled-form__field-root__shipping_address_1,
+    .controlled-form__field-root__shipping_address_2,
+    .controlled-form__field-root__use_billing_for_shipping,
+    .controlled-form__save {
+        grid-column : span 2;
+    }
+
+    .controlled-form__field-root__use_billing_for_shipping {
+        display     : flex;
+        align-items : center;
+        gap         : 10px;
+        margin      : 10px 0;
+    }
+}

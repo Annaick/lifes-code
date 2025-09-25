@@ -1,0 +1,183 @@
+/**
+Payment & Shipping Modal
+ */
+
+.payment-modal {
+    .calculator-buttons {
+        max-width : 605px;
+    }
+
+    .numeric-register-controller button.submit-button.large {
+        background-color : var(--pay_button_background);
+        font-weight      : 700;
+    }
+
+    .numeric-register-controller button.submit-button.large {
+        border-color : var(--pay_button_background);
+    }
+
+    .modal__title {
+        margin-left : 220px;
+    }
+
+    .modal__content {
+        display        : flex;
+        flex-direction : row;
+    }
+
+    .payment-totals {
+        width            : 220px;
+        background-color : var(--light-grey);
+        margin           : -94px 20px -20px -20px;
+    }
+
+    .total {
+        border-bottom : 1px solid #fff;
+        padding       : 10px 0;
+        text-align    : right;
+    }
+
+    .total span {
+        width   : 100%;
+        display : block;
+        padding : 10px 20px;
+    }
+
+    .total span.label {
+        font-weight : 600;
+        font-size   : 1em;
+
+    }
+
+    .total span.amount {
+        width       : 100%;
+        display     : block;
+        padding     : 0 20px;
+        font-weight : 700;
+        font-size   : 1.5em;
+    }
+
+    .total.total-payable .amount {
+        color : var(--primary);
+    }
+
+    .total.balance .amount {
+        color : var(--secondary);
+    }
+}
+
+.payment-method-label {
+    display      : flex;
+    padding-left : 30px;
+    align-items  : center;
+}
+
+.payment-method-label span {
+    font-weight : 600;
+    font-size   : 0.8em;
+    padding     : 10px 0;
+
+}
+
+span.payment-method__amount-label {
+    flex-basis : 50%;
+}
+
+.shipping-method .shipping-method__label {
+    flex-basis   : 50%;
+    font-size    : 0.8em;
+    font-weight  : 600;
+    padding      : 10px 0 0;
+    margin-right : 5px;
+}
+
+.shipping-method .shipping-method__label:last-child {
+    margin-right : 0;
+}
+
+.shipping-method,
+.payment-method {
+    display     : flex;
+    align-items : center;
+    width       : 100%;
+    cursor      : pointer;
+    padding     : 5px 10px;
+    gap         : 8px;
+
+    .pos-field-root {
+        flex : 1;
+    }
+}
+
+.payment-methods-select,
+.payment-methods-select__popover {
+
+    .pos-select-field__toggle__left-icon,
+    .pos-select-field__option__icon {
+        font-weight : 600;
+
+        &.yith-pos-icon-paypal {
+            font-size   : 15px;
+            font-weight : 400;
+            margin      : 0 2px 0 3px;
+        }
+    }
+}
+
+.payment-method__remove.yith-pos-icon-clear {
+    font-size : .75em;
+}
+
+.payment-method__remove.first {
+    width : .75em;
+}
+
+.add-payment-method {
+    margin : 20px 0;
+}
+
+.payment-method:hover,
+.payment-method.current {
+    background-color : var(--light-grey);
+}
+
+.shipping-method input,
+.payment-method input {
+    color       : #000;
+    text-align  : right;
+    /* line-height : 56px; */
+    font-size   : 1em;
+    font-weight : 600;
+}
+
+.payment-method.current .select-wrapper,
+.payment-method.current input {
+    border : 1px solid var(--primary);
+}
+
+.shipping-method input {
+    border : 1px solid var(--primary);
+}
+
+.payment-modal .disableSubmit .numeric-register-controller button.submit-button.large {
+    opacity : 0.5;
+    cursor  : default;
+}
+
+.shipping-modal .numeric-register-controller button.submit-button.large {
+    font-size   : 20px;
+    font-weight : 700;
+}
+
+.shipping-method-amount-to-pay {
+    display         : flex;
+    justify-content : flex-end;
+}
+
+.shipping-method-amount-to-pay .form-group.form-group-amountToPay {
+    flex-basis : 49%;
+}
+
+.shipping-method .select-wrapper i {
+    font-size : 24px;
+}

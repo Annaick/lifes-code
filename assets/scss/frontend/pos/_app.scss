@@ -1,0 +1,26 @@
+a.link {
+    cursor : pointer;
+    color  : var(--primary);
+
+    &.link--underlined {
+        text-decoration : underline;
+    }
+
+    &.link--bold {
+        text-decoration : none;
+        font-weight     : 600;
+    }
+
+    &.link--inline-flex-layout {
+        display     : inline-flex;
+        align-items : center;
+    }
+
+    i{
+        font-size: 1.3em;
+    }
+}
+
+a.link:hover {
+    color : var(--dark_primary);
+}
