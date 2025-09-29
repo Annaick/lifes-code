@@ -33,17 +33,19 @@ function yith_pos_render_stock_row( $product ) {
 	$price_html   = $product->get_price_html();
 	$manage_stock = $product->managing_stock();
 	$stock_qty    = $manage_stock ? wc_stock_amount( $product->get_stock_quantity() ) : __( '—', 'yith-point-of-sale-for-woocommerce' );
-$type_label   = ucfirst( $product->get_type() );
+	$type_label   = ucfirst( $product->get_type() );
 
 	$product_name = $product->get_name();
 	$product_id   = $product->get_id();
 
 	$has_children = $product->is_type( 'variable' );
 	$toggle_attr  = $has_children ? ' data-has-children="1"' : '';
-	$toggle_btn   = $has_children ? '<button type="button" class="button-link yith-pos-toggle-children" aria-expanded="false" aria-controls="variations-' . esc_attr( $product_id ) . '">+</button>' : '';
+	$toggle_btn   = $has_children ? '<button type="button" class="button-link yith-pos-toggle-children" aria-expanded="false" aria-controls="variations-' . esc_attr( $product_id ) . '" title="Toggle variations">+</button>' : '';
+	// Stock breakdown toggle for product row.
+	$stock_toggle_btn = '<button type="button" class="button-link yith-pos-toggle-stock" aria-expanded="false" aria-controls="stock-' . esc_attr( $product_id ) . '" title="Toggle stock breakdown">⛃</button>';
 
 	echo '<tr class="yith-pos-stock-row"' . $toggle_attr . ' data-product-id="' . esc_attr( $product_id ) . '">';
-	echo '<td class="column-toggle">' . $toggle_btn . '</td>';
+	echo '<td class="column-toggle">' . $stock_toggle_btn . ' ' . $toggle_btn . '</td>';
 	echo '<td class="column-id">' . esc_html( $product_id ) . '</td>';
 	echo '<td class="column-name">' . esc_html( $product_name ) . '</td>';
 	echo '<td class="column-type">' . esc_html( $type_label ) . '</td>';
@@ -51,13 +53,21 @@ $type_label   = ucfirst( $product->get_type() );
 	echo '<td class="column-price">' . wp_kses_post( $price_html ) . '</td>';
 	echo '</tr>';
 
+	// Per-store stock breakdown for the product (including Principale/general) - hidden by default.
+	$breakdown_html = yith_pos_get_stock_breakdown_html( $product );
+	if ( $breakdown_html ) {
+	    echo '<tr id="stock-' . esc_attr( $product_id ) . '" class="yith-pos-stock-breakdown level-1" style="display:none">';
+	    echo '<td></td><td colspan="5">' . $breakdown_html . '</td>';
+	    echo '</tr>';
+	}
+
 	if ( $has_children ) {
 		$children = $product->get_children();
 		if ( $children ) {
 			echo '<tr id="variations-' . esc_attr( $product_id ) . '" class="yith-pos-variation-container" style="display:none">';
-			echo '<td></td><td colspan="4">';
-			echo '<table class="widefat fixed striped yith-pos-variations-table"><thead><tr><th class="column-id">' . esc_html__( 'Variation ID', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-name">' . esc_html__( 'Attributes', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-stock">' . esc_html__( 'Stock', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-price">' . esc_html__( 'Price', 'yith-point-of-sale-for-woocommerce' ) . '</th></tr></thead><tbody>';
-			foreach ( $children as $child_id ) {
+            echo '<td></td><td colspan="4">';
+            echo '<table class="widefat fixed striped yith-pos-variations-table"><thead><tr><th class="column-toggle" style="width:40px"></th><th class="column-id">' . esc_html__( 'Variation ID', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-name">' . esc_html__( 'Attributes', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-stock">' . esc_html__( 'Stock', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-price">' . esc_html__( 'Price', 'yith-point-of-sale-for-woocommerce' ) . '</th></tr></thead><tbody>';
+            foreach ( $children as $child_id ) {
 				$variation = wc_get_product( $child_id );
 				if ( ! $variation ) {
 					continue;
@@ -66,12 +76,19 @@ $type_label   = ucfirst( $product->get_type() );
 				$price_html_v = $variation->get_price_html();
 				$manage_v     = $variation->managing_stock();
 				$stock_v      = $manage_v ? wc_stock_amount( $variation->get_stock_quantity() ) : __( '—', 'yith-point-of-sale-for-woocommerce' );
-				echo '<tr>';
+                echo '<tr class="yith-pos-variation-row">';
+                echo '<td class="column-toggle"><button type="button" class="button-link yith-pos-toggle-stock" aria-expanded="false" aria-controls="var-stock-' . esc_attr( $variation->get_id() ) . '" title="Toggle stock breakdown">⛃</button></td>';
 				echo '<td class="column-id">' . esc_html( $variation->get_id() ) . '</td>';
 				echo '<td class="column-name">' . wp_kses_post( $attrs ) . '</td>';
 				echo '<td class="column-stock">' . esc_html( $stock_v ) . '</td>';
 				echo '<td class="column-price">' . wp_kses_post( $price_html_v ) . '</td>';
 				echo '</tr>';
+
+				// Variation per-store stock breakdown row.
+                $variation_breakdown_html = yith_pos_get_stock_breakdown_html( $variation );
+                if ( $variation_breakdown_html ) {
+                    echo '<tr id="var-stock-' . esc_attr( $variation->get_id() ) . '" class="yith-pos-variation-stock-breakdown level-2" style="display:none"><td></td><td colspan="4">' . $variation_breakdown_html . '</td></tr>';
+                }
 			}
 			echo '</tbody></table>';
 			echo '</td></tr>';
@@ -79,6 +96,58 @@ $type_label   = ucfirst( $product->get_type() );
 	}
 }
 
+/**
+ * Build HTML for per-store stock breakdown for a product or variation.
+ *
+ * @param WC_Product $product The product.
+ *
+ * @return string
+ */
+function yith_pos_get_stock_breakdown_html( $product ) {
+	if ( ! $product instanceof WC_Product ) {
+		return '';
+	}
+
+	$rows = array();
+
+	// Principale (general) stock.
+	$general_stock = $product->managing_stock() ? wc_stock_amount( $product->get_stock_quantity() ) : '—';
+	$rows[]        = array(
+		'label' => __( 'Principale', 'yith-point-of-sale-for-woocommerce' ),
+		'qty'   => $general_stock,
+	);
+
+	// Multistock per store if enabled and present.
+	$multi_enabled = 'yes' === $product->get_meta( '_yith_pos_multistock_enabled', true );
+	$multi_stock   = $product->get_meta( '_yith_pos_multistock' );
+	$multi_stock   = ! ! $multi_stock ? $multi_stock : array();
+
+	if ( $multi_enabled && ! empty( $multi_stock ) ) {
+		foreach ( $multi_stock as $store_id => $qty ) {
+			$store      = yith_pos_get_store( intval( $store_id ) );
+			$store_name = $store instanceof YITH_POS_Store ? $store->get_name() : sprintf( __( 'Store #%d', 'yith-point-of-sale-for-woocommerce' ), intval( $store_id ) );
+			$rows[]     = array(
+				'label' => $store_name,
+				'qty'   => wc_stock_amount( $qty ),
+			);
+		}
+	}
+
+	if ( empty( $rows ) ) {
+		return '';
+	}
+
+	ob_start();
+	echo '<table class="widefat fixed striped yith-pos-stock-breakdown-table">';
+	echo '<thead><tr><th style="width:50%">' . esc_html__( 'Location', 'yith-point-of-sale-for-woocommerce' ) . '</th><th style="width:50%">' . esc_html__( 'Stock', 'yith-point-of-sale-for-woocommerce' ) . '</th></tr></thead>';
+	echo '<tbody>';
+	foreach ( $rows as $r ) {
+		echo '<tr><td>' . esc_html( $r['label'] ) . '</td><td>' . esc_html( $r['qty'] ) . '</td></tr>';
+	}
+	echo '</tbody></table>';
+
+	return (string) ob_get_clean();
+}
 ?>
 <div class="wrap yith-pos-stock-wrap">
 	<h2><?php echo esc_html__( 'Stock', 'yith-point-of-sale-for-woocommerce' ); ?></h2>
@@ -121,21 +190,65 @@ $type_label   = ucfirst( $product->get_type() );
 		</div>
 	<?php endif; ?>
 </div>
+<style>
+.yith-pos-stock-table .button-link { text-decoration: none; font-size: 14px; }
+.yith-pos-stock-table .column-toggle { white-space: nowrap; }
+
+/* Default: all rows white */
+.yith-pos-stock-row td,
+.yith-pos-variation-row td,
+.yith-pos-stock-breakdown td,
+.yith-pos-variation-stock-breakdown td { background: #ffffff; }
+
+/* When expanded, tint the main row and its subcontent */
+.is-expanded > td { background: #f3f4f6; }
+.is-expanded + .yith-pos-stock-breakdown.level-1 td { background: #f3f4f6; }
+.yith-pos-stock-row.is-expanded + .yith-pos-variation-container td { background: #f3f4f6; }
+.yith-pos-variation-row.is-expanded + .yith-pos-variation-stock-breakdown.level-2 td { background: #f3f4f6; }
+</style>
 <script>
 (function(){
-	document.addEventListener('click', function(e){
-		var btn = e.target.closest('.yith-pos-toggle-children');
-		if(!btn){return;}
-		var row = btn.closest('tr');
-		var productId = row && row.getAttribute('data-product-id');
-		if(!productId){return;}
-		var container = document.getElementById('variations-' + productId);
-		if(!container){return;}
-		var expanded = btn.getAttribute('aria-expanded') === 'true';
-		btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-		btn.textContent = expanded ? '+' : '−';
-		container.style.display = expanded ? 'none' : '';
-	});
+    document.addEventListener('click', function(e){
+        // Toggle variations group under a product row
+        var btnVar = e.target.closest('.yith-pos-toggle-children');
+        if(btnVar){
+            var row = btnVar.closest('tr');
+            var productId = row && row.getAttribute('data-product-id');
+            if(!productId){return;}
+            var container = document.getElementById('variations-' + productId);
+            if(!container){return;}
+            var expanded = btnVar.getAttribute('aria-expanded') === 'true';
+            btnVar.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+            btnVar.textContent = expanded ? '+' : '−';
+            container.style.display = expanded ? 'none' : '';
+            // Tint the parent product row when its variations are shown
+            if(row){
+                if(expanded){ row.classList.remove('is-expanded'); }
+                else { row.classList.add('is-expanded'); }
+            }
+            return;
+        }
+
+        // Toggle stock breakdown for product or variation
+        var btnStock = e.target.closest('.yith-pos-toggle-stock');
+        if(btnStock){
+            var targetId = btnStock.getAttribute('aria-controls');
+            if(!targetId){return;}
+            var target = document.getElementById(targetId);
+            if(!target){return;}
+            var expanded = btnStock.getAttribute('aria-expanded') === 'true';
+            btnStock.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+            target.style.display = expanded ? 'none' : '';
+
+            // Add/remove expanded class on the owning row for background tint
+            var ownerRow = btnStock.closest('tr');
+            if(ownerRow){
+                if(expanded){ ownerRow.classList.remove('is-expanded'); }
+                else { ownerRow.classList.add('is-expanded'); }
+            }
+            return;
+        }
+    });
 })();
 </script>
 
