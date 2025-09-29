@@ -395,7 +395,7 @@ if ( ! class_exists( 'YIT_Plugin_Panel' ) ) {
 
 				// YITH text must NOT be translated.
 				if ( ! ! $show ) {
-					add_menu_page( 'yith_plugin_panel', 'YITH', $capability, 'yith_plugin_panel', null, yith_plugin_fw_get_default_logo(), $position );
+					add_menu_page( 'yith_plugin_panel', 'Lifes-code', $capability, 'yith_plugin_panel', null, yith_plugin_fw_get_default_logo(), $position );
 					// Prevent issues for backward compatibility.
 					$admin_page_hooks['yith_plugin_panel'] = 'yith-plugins'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 				}
