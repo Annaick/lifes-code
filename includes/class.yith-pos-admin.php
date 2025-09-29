@@ -97,6 +97,11 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 			add_action( 'pre_get_posts', array( $this, 'filter_orders' ), 10, 1 );
 			add_action( 'woocommerce_shop_order_list_table_prepare_items_query_args', array( $this, 'filter_orders_hpos' ), 10, 1 );
 
+			// AJAX: Stock inline updates in Stock tab.
+			add_action( 'wp_ajax_yith_pos_update_stock', array( $this, 'ajax_update_stock' ) );
+			add_action( 'wp_ajax_yith_pos_transfer_stock', array( $this, 'ajax_transfer_stock' ) );
+			add_action( 'wp_ajax_yith_pos_add_store_stock', array( $this, 'ajax_add_store_stock' ) );
+
 			add_filter( 'woocommerce_payment_gateways_setting_columns', array( $this, 'gateway_enabled_pos_column' ), 10, 1 );
 			add_action( 'woocommerce_payment_gateways_setting_column_status_pos', array( $this, 'gateway_pos_column_content' ), 10, 1 );
 
@@ -505,6 +510,134 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 		public function stock_tab() {
 			echo "<div class='woocommerce-page'>";
 			yith_pos_get_view( 'panel/stock.php' );
+		}
+
+		/**
+		 * AJAX: Update stock for general (Principale) or per-store for a product/variation.
+		 */
+		public function ajax_update_stock() {
+			check_ajax_referer( 'yith_pos_stock_nonce', 'nonce' );
+			if ( ! current_user_can( 'yith_pos_manage_pos_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied', 'yith-point-of-sale-for-woocommerce' ) ), 403 );
+			}
+
+			$product_id = absint( $_POST['product_id'] ?? 0 );
+			$store_id   = isset( $_POST['store_id'] ) && '' !== $_POST['store_id'] ? sanitize_text_field( wp_unslash( $_POST['store_id'] ) ) : ''; // 'general' or numeric
+			$qty        = wc_stock_amount( wp_unslash( $_POST['qty'] ?? 0 ) );
+
+			$product = wc_get_product( $product_id );
+			if ( ! $product ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid product', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+
+			if ( 'general' === $store_id ) {
+				// Update WC stock quantity.
+				$product->set_stock_quantity( $qty );
+				$product->save();
+			} else {
+				// Update multistock meta.
+				$multi_stock = $product->get_meta( '_yith_pos_multistock' );
+				$multi_stock = ! ! $multi_stock ? $multi_stock : array();
+				$store_id_i  = absint( $store_id );
+				$multi_stock[ $store_id_i ] = $qty;
+				$product->update_meta_data( '_yith_pos_multistock_enabled', 'yes' );
+				$product->update_meta_data( '_yith_pos_multistock', $multi_stock );
+				$product->save();
+			}
+
+			wp_send_json_success( array( 'qty' => $qty ) );
+		}
+
+		/**
+		 * AJAX: Transfer stock within a product from one store to another.
+		 */
+		public function ajax_transfer_stock() {
+			check_ajax_referer( 'yith_pos_stock_nonce', 'nonce' );
+			if ( ! current_user_can( 'yith_pos_manage_pos_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied', 'yith-point-of-sale-for-woocommerce' ) ), 403 );
+			}
+
+			$product_id = absint( $_POST['product_id'] ?? 0 );
+			$from_store = sanitize_text_field( wp_unslash( $_POST['from_store'] ?? '' ) ); // 'general' or numeric
+			$to_store   = sanitize_text_field( wp_unslash( $_POST['to_store'] ?? '' ) );
+			$qty        = max( 0, wc_stock_amount( wp_unslash( $_POST['qty'] ?? 0 ) ) );
+
+			if ( ! $product_id || ! $from_store || ! $to_store || $from_store === $to_store ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid parameters', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+
+			$product = wc_get_product( $product_id );
+			if ( ! $product ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid product', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+
+			$multi_stock = $product->get_meta( '_yith_pos_multistock' );
+			$multi_stock = ! ! $multi_stock ? $multi_stock : array();
+
+			// Resolve current amounts.
+			$from_is_general = ( 'general' === $from_store );
+			$to_is_general   = ( 'general' === $to_store );
+			$from_id         = $from_is_general ? null : absint( $from_store );
+			$to_id           = $to_is_general ? null : absint( $to_store );
+
+			$current_from = $from_is_general ? (int) $product->get_stock_quantity() : (int) ( $multi_stock[ $from_id ] ?? 0 );
+			$current_to   = $to_is_general ? (int) $product->get_stock_quantity() : (int) ( $multi_stock[ $to_id ] ?? 0 );
+
+			$move = min( $qty, max( 0, $current_from ) );
+			if ( $move <= 0 ) {
+				wp_send_json_error( array( 'message' => __( 'Nothing to transfer', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+
+			// Apply changes.
+			if ( $from_is_general ) {
+				$product->set_stock_quantity( max( 0, $current_from - $move ) );
+			} else {
+				$multi_stock[ $from_id ] = max( 0, $current_from - $move );
+			}
+
+			if ( $to_is_general ) {
+				$product->set_stock_quantity( $current_to + $move );
+			} else {
+				$multi_stock[ $to_id ] = $current_to + $move;
+			}
+
+			$product->update_meta_data( '_yith_pos_multistock_enabled', 'yes' );
+			$product->update_meta_data( '_yith_pos_multistock', $multi_stock );
+			$product->save();
+
+			wp_send_json_success( array( 'moved' => $move ) );
+		}
+
+		/**
+		 * AJAX: Add a new store stock entry (initially 0) for a product.
+		 */
+		public function ajax_add_store_stock() {
+			check_ajax_referer( 'yith_pos_stock_nonce', 'nonce' );
+			if ( ! current_user_can( 'yith_pos_manage_pos_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied', 'yith-point-of-sale-for-woocommerce' ) ), 403 );
+			}
+
+			$product_id = absint( $_POST['product_id'] ?? 0 );
+			$store_id   = absint( $_POST['store_id'] ?? 0 );
+
+			$product = wc_get_product( $product_id );
+			if ( ! $product || ! $store_id ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid parameters', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+
+			$multi_stock = $product->get_meta( '_yith_pos_multistock' );
+			$multi_stock = ! ! $multi_stock ? $multi_stock : array();
+
+			if ( isset( $multi_stock[ $store_id ] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Already exists', 'yith-point-of-sale-for-woocommerce' ) ) );
+			}
+
+			$multi_stock[ $store_id ] = 0;
+			$product->update_meta_data( '_yith_pos_multistock_enabled', 'yes' );
+			$product->update_meta_data( '_yith_pos_multistock', $multi_stock );
+			$product->save();
+
+			wp_send_json_success( array( 'store_id' => $store_id, 'qty' => 0 ) );
 		}
 
 
