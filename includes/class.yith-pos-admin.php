@@ -82,6 +82,7 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 			add_filter( 'yith_show_plugin_row_meta', array( $this, 'plugin_row_meta' ), 10, 3 );
 
 			add_action( 'yith_pos_dashboard_tab', array( $this, 'dashboard_tab' ) );
+			add_action( 'yith_pos_stock_tab', array( $this, 'stock_tab' ) );
 
 			add_filter( 'yith_plugin_fw_get_field_template_path', array( $this, 'add_custom_field_path' ), 20, 2 );
 
@@ -170,6 +171,12 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 					'description' => 'An overview of orders and sales from POS',
 					'capability'  => 'yith_pos_manage_pos_options',
 				),
+				'stock'         => array(
+					'title'       => __( 'Stock', 'yith-point-of-sale-for-woocommerce' ),
+					'description' => __( 'View and manage stock by product and variation', 'yith-point-of-sale-for-woocommerce' ),
+					'icon'        => '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a.75.75 0 011.06 0L21.218 12M4.5 9.75V19.5A1.5 1.5 0 006 21h12a1.5 1.5 0 001.5-1.5V9.75M8.25 21V12h7.5v9"></path></svg>',
+					'capability'  => 'yith_pos_manage_pos_options',
+				),
 				'stores'        => array(
 					'title'       => __( 'Stores', 'yith-point-of-sale-for-woocommerce' ),
 					'description' => __( 'Create, edit, and manage all your stores', 'yith-point-of-sale-for-woocommerce' ),
@@ -236,7 +243,7 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 				'ui_version'       => 2,
 				'create_menu_page' => true,
 				'parent_slug'      => '',
-				'page_title'       => 'YITH Point of Sale for WooCommerce',
+				'page_title'       => 'Lifes-code POS',
 				'menu_title'       => 'Point of Sale',
 				'capability'       => 'yith_pos_manage_pos',
 				'parent'           => '',
@@ -443,10 +450,10 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 		/**
 		 * Count post types for managers.
 		 *
-		 * @param array  $counts    List of counts.
-		 * @param string $post_type The post type.
+		 * @param stdClass $counts    List of counts (as returned by wp_count_posts).
+		 * @param string   $post_type The post type.
 		 *
-		 * @return array
+		 * @return stdClass
 		 */
 		public function count_post_types_for_managers( $counts, $post_type ) {
 			if (
@@ -490,6 +497,14 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 		public function dashboard_tab() {
 			echo "<div class='woocommerce-page'>";
 			yith_pos_get_view( 'panel/dashboard.php' );
+		}
+
+		/**
+		 * Render Stock tab
+		 */
+		public function stock_tab() {
+			echo "<div class='woocommerce-page'>";
+			yith_pos_get_view( 'panel/stock.php' );
 		}
 
 
