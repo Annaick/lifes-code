@@ -99,6 +99,7 @@ if ( ! class_exists( 'YITH_POS' ) ) {
 			require_once YITH_POS_INCLUDES_PATH . 'class.yith-pos-settings.php';
 			require_once YITH_POS_INCLUDES_PATH . 'class.yith-pos-order-stats-query.php';
 			require_once YITH_POS_INCLUDES_PATH . 'class-yith-pos-register-sessions.php';
+		require_once YITH_POS_INCLUDES_PATH . 'class.yith-pos-shipping-to-store.php';
 
 			require_once YITH_POS_INCLUDES_PATH . 'integrations/class.yith-pos-integrations.php';
 
@@ -131,6 +132,7 @@ if ( ! class_exists( 'YITH_POS' ) ) {
 			YITH_POS_Register_Sessions::get_instance();
 			YITH_POS_Stock_Management::get_instance();
 			YITH_POS_Pack_Lots::get_instance();
+		YITH_POS_Shipping_To_Store::get_instance();
 
 			// Ensure custom email mirroring is in place.
 			if ( class_exists( 'YITH_POS_Orders' ) && method_exists( 'YITH_POS_Orders', 'register_completed_email_mirroring_hooks' ) ) {
