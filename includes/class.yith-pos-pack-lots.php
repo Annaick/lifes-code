@@ -248,9 +248,48 @@ if ( ! class_exists( 'YITH_POS_Pack_Lots' ) ) {
                     continue;
                 }
                 $qty_sets = (int) $item->get_quantity();
+
+                // For restore, prefer using recorded component reductions if present.
+                if ( 'increase' === $operation ) {
+                    $recorded = $item->get_meta( '_yith_pos_pack_components_reduced', true );
+                    if ( is_array( $recorded ) && ! empty( $recorded ) ) {
+                        foreach ( $recorded as $rec ) {
+                            $component_id = absint( $rec['id'] ?? 0 );
+                            $qty_delta    = wc_stock_amount( absint( $rec['qty'] ?? 0 ) );
+                            if ( ! $component_id || ! $qty_delta ) {
+                                continue;
+                            }
+                            $component = wc_get_product( $component_id );
+                            if ( ! $component ) {
+                                continue;
+                            }
+                            $rec_store = isset( $rec['store_id'] ) ? absint( $rec['store_id'] ) : 0;
+                            if ( $rec_store && function_exists( 'yith_pos_stock_management' ) ) {
+                                $sm        = yith_pos_stock_management();
+                                $stock_amt = $sm->get_stock_amount( $component, $rec_store );
+                                if ( false !== $stock_amt ) {
+                                    $sm->update_product_stock( $component, $qty_delta, $rec_store, $stock_amt, 'increase' );
+                                    continue;
+                                }
+                            }
+                            wc_update_product_stock( $component, $qty_delta, 'increase' );
+                        }
+                        // Clear the record after restore.
+                        $item->delete_meta_data( '_yith_pos_pack_components_reduced' );
+                        $item->save();
+                        continue; // Done with this item.
+                    }
+                }
                 foreach ( $components as $c ) {
                     $component = wc_get_product( $c['id'] );
                     if ( ! $component ) {
+                        continue;
+                    }
+
+                    // Ensure we operate on the product that actually manages stock (variation may be parent-managed).
+                    $managed_id        = method_exists( $component, 'get_stock_managed_by_id' ) ? $component->get_stock_managed_by_id() : $component->get_id();
+                    $component_with_ms = $managed_id !== $component->get_id() ? wc_get_product( $managed_id ) : $component;
+                    if ( ! $component_with_ms ) {
                         continue;
                     }
 
@@ -258,18 +297,39 @@ if ( ! class_exists( 'YITH_POS_Pack_Lots' ) ) {
 
                     if ( $store_id && function_exists( 'yith_pos_stock_management' ) ) {
                         $sm          = yith_pos_stock_management();
-                        $stock_amt   = $sm->get_stock_amount( $component, $store_id );
+                        $stock_amt   = $sm->get_stock_amount( $component_with_ms, $store_id );
                         if ( false !== $stock_amt ) {
-                            $new_stock = ( 'decrease' === $operation )
-                                ? $sm->update_product_stock( $component, $delta, $store_id, $stock_amt, 'decrease' )
-                                : $sm->update_product_stock( $component, $delta, $store_id, $stock_amt, 'increase' );
+                            ( 'decrease' === $operation )
+                                ? $sm->update_product_stock( $component_with_ms, $delta, $store_id, $stock_amt, 'decrease' )
+                                : $sm->update_product_stock( $component_with_ms, $delta, $store_id, $stock_amt, 'increase' );
+                            // Record reduction for accurate restore.
+                            if ( 'decrease' === $operation ) {
+                                $this->record_component_reduction( $item, $component_with_ms->get_id(), $delta, $store_id );
+                            }
                             continue;
                         }
                     }
                     // Fallback to general stock.
-                    wc_update_product_stock( $component, $delta, ( 'decrease' === $operation ) ? 'decrease' : 'increase' );
+                    wc_update_product_stock( $component_with_ms, $delta, ( 'decrease' === $operation ) ? 'decrease' : 'increase' );
+                    if ( 'decrease' === $operation ) {
+                        $this->record_component_reduction( $item, $component_with_ms->get_id(), $delta, 0 );
+                    }
                 }
             }
+        }
+
+        private function record_component_reduction( WC_Order_Item_Product $item, $component_id, $qty, $store_id ) {
+            $record = $item->get_meta( '_yith_pos_pack_components_reduced', true );
+            if ( ! is_array( $record ) ) {
+                $record = array();
+            }
+            $record[] = array(
+                'id'       => absint( $component_id ),
+                'qty'      => wc_stock_amount( $qty ),
+                'store_id' => absint( $store_id ),
+            );
+            $item->update_meta_data( '_yith_pos_pack_components_reduced', $record );
+            $item->save();
         }
 
         // ---------- Cart and emails rendering ----------
