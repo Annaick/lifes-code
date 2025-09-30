@@ -134,18 +134,38 @@ if ( ! function_exists( 'yith_pos_init' ) ) {
 add_action( 'yith_pos_init', 'yith_pos_init' );
 
 
-// Plugin Framework Loader.
+// Plugin Framework Loader (required for admin classes/components). Updates remain disabled via our filters below.
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'plugin-fw/init.php' ) ) {
-	require_once plugin_dir_path( __FILE__ ) . 'plugin-fw/init.php';
+    require_once plugin_dir_path( __FILE__ ) . 'plugin-fw/init.php';
 }
 
 
-//CUSTOM CODE
-add_action('init', function() {
-    if (class_exists('YITH\PluginUpgrade\Upgrade')) {
-        $upgrade_instance = YITH\PluginUpgrade\Upgrade::instance();
-        
-        // Remove the action that adds custom update rows
-        remove_action('load-plugins.php', array($upgrade_instance, 'remove_wp_plugin_update_row'), 25);
+// Disable plugin update checks for this plugin only.
+add_filter( 'site_transient_update_plugins', function( $value ) {
+    if ( isset( $value->response ) && is_array( $value->response ) ) {
+        $plugin_basename = plugin_basename( __FILE__ );
+        unset( $value->response[ $plugin_basename ] );
     }
-});
+    return $value;
+}, 999 );
+
+// Hide update row for this plugin.
+add_filter( 'plugin_row_meta', function( $plugin_meta, $plugin_file ) {
+    if ( plugin_basename( __FILE__ ) === $plugin_file ) {
+        // Remove update info injected by frameworks if any.
+        foreach ( $plugin_meta as $k => $meta ) {
+            if ( is_string( $meta ) && false !== strpos( $meta, 'update' ) ) {
+                unset( $plugin_meta[ $k ] );
+            }
+        }
+    }
+    return $plugin_meta;
+}, 999, 2 );
+
+// Block auto-updates for this plugin only.
+add_filter( 'auto_update_plugin', function( $update, $item ) {
+    if ( isset( $item->plugin ) && $item->plugin === plugin_basename( __FILE__ ) ) {
+        return false;
+    }
+    return $update;
+}, 999, 2 );

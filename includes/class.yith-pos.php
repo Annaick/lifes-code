@@ -82,8 +82,7 @@ if ( ! class_exists( 'YITH_POS' ) ) {
 
 			add_action( 'before_woocommerce_init', array( $this, 'declare_wc_features_support' ) );
 
-			add_action( 'wp_loaded', array( $this, 'register_plugin_for_activation' ), 99 );
-			add_action( 'wp_loaded', array( $this, 'register_plugin_for_updates' ), 99 );
+			// Disable update and license registration hooks.
 		}
 
 		/**
