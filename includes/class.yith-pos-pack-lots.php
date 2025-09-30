@@ -9,7 +9,7 @@ if ( ! class_exists( 'YITH_POS_Pack_Lots' ) ) {
     class YITH_POS_Pack_Lots {
         use YITH_POS_Singleton_Trait;
 
-        const META_KEY = '_yith_pos_pack_lot'; // string like "123:2,456:1"
+        const META_KEY = '_lot_contents'; // string like "123:2,456:1"
 
         private function __construct() {
             // Admin fields for simple products.
