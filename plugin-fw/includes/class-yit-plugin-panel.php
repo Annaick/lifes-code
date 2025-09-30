@@ -987,13 +987,13 @@ if ( ! class_exists( 'YIT_Plugin_Panel' ) ) {
 		 * @since  4.1.0
 		 */
 		protected function maybe_init_your_store_tools_tab() {
-			if ( isset( $this->settings['your_store_tools'] ) ) {
-				$this->settings['admin-tabs']['your-store-tools'] = array(
-					'title'       => _x( 'Your Store Tools', 'Panel tab name', 'yith-plugin-fw' ),
-					'icon'        => 'boost',
-					'description' => '',
-				);
-			}
+			//if ( isset( $this->settings['your_store_tools'] ) ) {
+			//	$this->settings['admin-tabs']['your-store-tools'] = array(
+			//		'title'       => _x( 'Your Store Tools', 'Panel tab name', 'yith-plugin-fw' ),
+			//		'icon'        => 'boost',
+			//		'description' => '',
+			//	);
+			//}
 		}
 
 		/**
@@ -1002,13 +1002,13 @@ if ( ! class_exists( 'YIT_Plugin_Panel' ) ) {
 		 * @since  3.9.0
 		 */
 		protected function maybe_init_help_tab() {
-			if ( $this->has_help_tab() ) {
-				$this->settings['admin-tabs']['help'] = array(
-					'title'       => _x( 'Help', 'Help tab name', 'yith-plugin-fw' ),
-					'icon'        => 'help',
-					'description' => '',
-				);
-			}
+			//if ( $this->has_help_tab() ) {
+			//	$this->settings['admin-tabs']['help'] = array(
+			//		'title'       => _x( 'Help', 'Help tab name', 'yith-plugin-fw' ),
+			//		'icon'        => 'help',
+			//		'description' => '',
+			//	);
+			//}
 		}
 
 		/**

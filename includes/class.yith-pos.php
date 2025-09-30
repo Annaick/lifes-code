@@ -96,6 +96,7 @@ if ( ! class_exists( 'YITH_POS' ) ) {
 			require_once YITH_POS_INCLUDES_PATH . 'class.yith-pos-orders.php';
 			require_once YITH_POS_INCLUDES_PATH . 'class.yith-pos-ajax.php';
 			require_once YITH_POS_INCLUDES_PATH . 'class.yith-pos-stock-management.php';
+			require_once YITH_POS_INCLUDES_PATH . 'class.yith-pos-pack-lots.php';
 			require_once YITH_POS_INCLUDES_PATH . 'class.yith-pos-settings.php';
 			require_once YITH_POS_INCLUDES_PATH . 'class.yith-pos-order-stats-query.php';
 			require_once YITH_POS_INCLUDES_PATH . 'class-yith-pos-register-sessions.php';
@@ -130,6 +131,7 @@ if ( ! class_exists( 'YITH_POS' ) ) {
 			YITH_POS_Ajax::get_instance();
 			YITH_POS_Register_Sessions::get_instance();
 			YITH_POS_Stock_Management::get_instance();
+			YITH_POS_Pack_Lots::get_instance();
 
 			YITH_POS_Integrations::get_instance();
 
