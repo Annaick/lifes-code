@@ -40,6 +40,9 @@ if ( ! class_exists( 'YITH_POS_Pack_Lots' ) ) {
             add_action( 'woocommerce_order_item_meta_end', array( $this, 'render_lot_in_order_item' ), 10, 4 );
             add_filter( 'woocommerce_display_item_meta', array( $this, 'append_lot_to_display_item_meta' ), 10, 3 );
             add_action( 'wpo_wcpdf_after_item_meta', array( $this, 'render_lot_in_pdf' ), 10, 3 );
+
+            // POS REST: enrich product with lot info (and optionally inline-append to name for visibility in cart list).
+            add_filter( 'woocommerce_rest_prepare_product_object', array( $this, 'rest_add_lot_info_to_product' ), 20, 3 );
         }
 
         // ---------- Admin UI ----------
@@ -449,6 +452,50 @@ if ( ! class_exists( 'YITH_POS_Pack_Lots' ) ) {
             echo '<strong>' . esc_html__( 'Contenu du lot:', 'yith-point-of-sale-for-woocommerce' ) . '</strong> ';
             echo esc_html( implode( ', ', $lines ) );
             echo '</div>';
+        }
+
+        // ---------- POS REST enrichment ----------
+        public function rest_add_lot_info_to_product( $response, $product, $request ) {
+            if ( ! $response instanceof WP_REST_Response || ! $product instanceof WC_Product ) {
+                return $response;
+            }
+            // Only for POS requests to avoid affecting public REST use.
+            $pos_request = $request['yith_pos_request'] ?? false;
+            if ( ! $pos_request ) {
+                return $response;
+            }
+
+            $raw        = $this->get_meta_for_product( $product );
+            $components = $this->parse_components( $raw );
+            if ( empty( $components ) ) {
+                return $response;
+            }
+
+            $lines = array();
+            foreach ( $components as $c ) {
+                $p = wc_get_product( $c['id'] );
+                if ( $p ) {
+                    $lines[] = $c['qty'] . 'x ' . $p->get_name();
+                }
+            }
+
+            if ( ! empty( $lines ) ) {
+                $data                              = $response->get_data();
+                $data['yith_pos_is_pack']          = true;
+                $data['yith_pos_lot_components']   = $lines;
+                $data['yith_pos_lot_text']         = implode( ', ', $lines );
+
+                // Optional inline append for visibility in current POS UI (kept concise).
+                $short = implode( ', ', array_slice( $lines, 0, 3 ) );
+                $suffix = '  b7 ' . sprintf( __( 'Lot: %s', 'yith-point-of-sale-for-woocommerce' ), $short );
+                if ( ! empty( $data['name'] ) && is_string( $data['name'] ) && false === strpos( $data['name'], 'Lot:' ) ) {
+                    $data['name'] .= $suffix;
+                }
+
+                $response->set_data( $data );
+            }
+
+            return $response;
         }
     }
 }
