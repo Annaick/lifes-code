@@ -5,7 +5,7 @@
  * Author: Annaick
  * Text Domain: yith-point-of-sale-for-woocommerce
  * Domain Path: /languages/
- * Version: 1.0.0
+ * Version: 3.13.0
  * Author URI: https://annaick.dev
  * Requires at least: 6.6
  * Tested up to: 6.8
@@ -15,7 +15,7 @@
  *
  * @author  
  * @package Lifes-code
- * @version 1.0.0
+ * @version 3.13.0
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -72,7 +72,7 @@ if ( ! function_exists( 'yith_plugin_onboarding_registration_hook' ) ) {
 
 
 ! defined( 'YITH_POS' ) && define( 'YITH_POS', true );
-! defined( 'YITH_POS_VERSION' ) && define( 'YITH_POS_VERSION', '1.0.0' );
+! defined( 'YITH_POS_VERSION' ) && define( 'YITH_POS_VERSION', '3.13.0' );
 ! defined( 'YITH_POS_INIT' ) && define( 'YITH_POS_INIT', plugin_basename( __FILE__ ) );
 ! defined( 'YITH_POS_FILE' ) && define( 'YITH_POS_FILE', __FILE__ );
 ! defined( 'YITH_POS_URL' ) && define( 'YITH_POS_URL', plugins_url( '/', __FILE__ ) );
