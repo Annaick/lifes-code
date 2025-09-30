@@ -112,6 +112,7 @@ if ( ! class_exists( 'YITH_POS_Store_Post_Type_Admin' ) ) {
 			unset( $columns['cb'] );
 
 			$new_columns['title']     = __( 'Store Name', 'yith-point-of-sale-for-woocommerce' );
+			$new_columns['category']  = __( 'Category', 'yith-point-of-sale-for-woocommerce' );
 			$new_columns['employees'] = __( 'Employees', 'yith-point-of-sale-for-woocommerce' );
 			$new_columns['registers'] = __( 'Registers', 'yith-point-of-sale-for-woocommerce' );
 			$new_columns['enabled']   = __( 'Enabled', 'yith-point-of-sale-for-woocommerce' );
@@ -149,6 +150,15 @@ if ( ! class_exists( 'YITH_POS_Store_Post_Type_Admin' ) ) {
 			if ( $registers ) {
 				yith_pos_compact_list( array_map( 'yith_pos_get_register_name', $registers ) );
 			}
+		}
+
+		/**
+		 * Render category column
+		 */
+		protected function render_category_column() {
+			$store    = $this->object;
+			$category = $store->get_category();
+			echo esc_html( $category ? $category : '—' );
 		}
 
 		/**

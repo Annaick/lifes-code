@@ -20,6 +20,7 @@ if ( ! class_exists( 'YITH_POS_Store' ) ) {
 		 */
 		protected $data = array(
 			'name'          => '',
+			'category'      => '',
 			'vat_number'    => '',
 			'address'       => '',
 			'city'          => '',
@@ -69,6 +70,17 @@ if ( ! class_exists( 'YITH_POS_Store' ) ) {
 		 */
 		public function get_name( $context = 'view' ) {
 			return $this->get_prop( 'name', $context );
+		}
+
+		/**
+		 * Return the category of the Store
+		 *
+		 * @param string $context What the value is for. Valid values are view and edit.
+		 *
+		 * @return string
+		 */
+		public function get_category( $context = 'view' ) {
+			return $this->get_prop( 'category', $context );
 		}
 
 		/**
@@ -264,6 +276,15 @@ if ( ! class_exists( 'YITH_POS_Store' ) ) {
 		 */
 		public function set_name( $value ) {
 			$this->set_prop( 'name', $value );
+		}
+
+		/**
+		 * Set the category of the Store
+		 *
+		 * @param string $value The value to set.
+		 */
+		public function set_category( $value ) {
+			$this->set_prop( 'category', sanitize_text_field( $value ) );
 		}
 
 		/**

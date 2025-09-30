@@ -52,6 +52,16 @@ $args = array(
 					'custom_attributes'      => ' required validate="true" data-message="' . __( 'The store name is required', 'yith-point-of-sale-for-woocommerce' ) . '"',
 					'yith-sanitize-callback' => 'sanitize_text_field',
 				),
+				'category'               => array(
+					'label'   => __( 'Category', 'yith-point-of-sale-for-woocommerce' ),
+					'type'    => 'select',
+					'options' => array(
+						''          => __( 'Select a category', 'yith-point-of-sale-for-woocommerce' ),
+						'Boutique'  => __( 'Boutique', 'yith-point-of-sale-for-woocommerce' ),
+						'Salon'     => __( 'Salon', 'yith-point-of-sale-for-woocommerce' ),
+					),
+					'desc'    => __( 'Choose the type of store.', 'yith-point-of-sale-for-woocommerce' ),
+				),
 				'vat_number'              => array(
 					'label' => __( 'VAT Number', 'yith-point-of-sale-for-woocommerce' ),
 					'type'  => 'text',

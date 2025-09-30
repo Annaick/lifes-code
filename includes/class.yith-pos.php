@@ -132,6 +132,11 @@ if ( ! class_exists( 'YITH_POS' ) ) {
 			YITH_POS_Stock_Management::get_instance();
 			YITH_POS_Pack_Lots::get_instance();
 
+			// Ensure custom email mirroring is in place.
+			if ( class_exists( 'YITH_POS_Orders' ) && method_exists( 'YITH_POS_Orders', 'register_completed_email_mirroring_hooks' ) ) {
+				YITH_POS_Orders::register_completed_email_mirroring_hooks();
+			}
+
 			YITH_POS_Integrations::get_instance();
 
 			$this->orders = YITH_POS_Orders::get_instance();

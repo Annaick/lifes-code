@@ -25,6 +25,8 @@ if ( ! class_exists( 'YITH_POS_Orders' ) ) {
 			add_action( 'woocommerce_order_item_fee_after_calculate_taxes', array( $this, 'disable_taxes_for_discounts' ), 10, 1 );
 			add_action( 'woocommerce_order_item_display_meta_key', array( $this, 'order_item_meta_label' ), 10, 1 );
 			add_action( 'woocommerce_payment_complete_order_status', array( $this, 'filter_order_status' ), 20, 3 );
+			add_filter( 'wc_order_statuses', array( $this, 'register_custom_statuses_labels' ), 20 );
+			add_action( 'init', array( $this, 'register_custom_statuses' ) );
 			add_action( 'woocommerce_coupon_get_items_to_validate', array( $this, 'filter_items_to_validate_for_discounts' ), 10, 2 );
 
 			// The 'woocommerce_order_get_tax_location' filter requires WooCommerce 4.1 or greater.
@@ -131,9 +133,68 @@ if ( ! class_exists( 'YITH_POS_Orders' ) ) {
 			if ( absint( $order->get_meta( '_yith_pos_order' ) ) ) {
 				$order_status = ! ! $order->get_items( 'shipping' ) ? 'processing' : 'completed';
 				$order_status = apply_filters( 'yith_pos_order_status', $order_status, $order );
+
+				// Override completed to our custom statuses based on store category.
+				if ( 'completed' === $order_status ) {
+					$store_id = $order->get_meta( '_yith_pos_store' );
+					if ( $store_id ) {
+						$store    = yith_pos_get_store( absint( $store_id ) );
+						$category = $store ? $store->get_category() : '';
+						if ( 'Boutique' === $category ) {
+							$order_status = 'achat-boutique';
+						} elseif ( 'Salon' === $category ) {
+							$order_status = 'achat-salon';
+						}
+					}
+				}
 			}
 
 			return $order_status;
+		}
+
+		public function register_custom_statuses() {
+			register_post_status( 'wc-achat-boutique', array(
+				'label'                     => _x( 'Achat Boutique', 'Order status', 'yith-point-of-sale-for-woocommerce' ),
+				'public'                    => true,
+				'exclude_from_search'       => false,
+				'show_in_admin_all_list'    => true,
+				'show_in_admin_status_list' => true,
+				'label_count'               => _n_noop( 'Achat Boutique <span class="count">(%s)</span>', 'Achat Boutique <span class="count">(%s)</span>', 'yith-point-of-sale-for-woocommerce' ),
+			) );
+			register_post_status( 'wc-achat-salon', array(
+				'label'                     => _x( 'Achat Salon', 'Order status', 'yith-point-of-sale-for-woocommerce' ),
+				'public'                    => true,
+				'exclude_from_search'       => false,
+				'show_in_admin_all_list'    => true,
+				'show_in_admin_status_list' => true,
+				'label_count'               => _n_noop( 'Achat Salon <span class="count">(%s)</span>', 'Achat Salon <span class="count">(%s)</span>', 'yith-point-of-sale-for-woocommerce' ),
+			) );
+		}
+
+		public function register_custom_statuses_labels( $statuses ) {
+			$statuses['wc-achat-boutique'] = __( 'Achat Boutique', 'yith-point-of-sale-for-woocommerce' );
+			$statuses['wc-achat-salon']    = __( 'Achat Salon', 'yith-point-of-sale-for-woocommerce' );
+			return $statuses;
+		}
+
+		/**
+		 * Mirror completed email triggers for custom statuses.
+		 */
+		public static function mirror_completed_email_triggers() {
+			$args = func_get_args();
+			$order_id = isset( $args[0] ) ? $args[0] : 0;
+			if ( $order_id ) {
+				do_action( 'woocommerce_order_status_completed', $order_id );
+				do_action( 'woocommerce_order_status_completed_notification', $order_id );
+			}
+		}
+
+		/**
+		 * Register hooks to mirror completed emails for our statuses.
+		 */
+		public static function register_completed_email_mirroring_hooks() {
+			add_action( 'woocommerce_order_status_achat-boutique', array( __CLASS__, 'mirror_completed_email_triggers' ), 10, 1 );
+			add_action( 'woocommerce_order_status_achat-salon', array( __CLASS__, 'mirror_completed_email_triggers' ), 10, 1 );
 		}
 
 		/**
