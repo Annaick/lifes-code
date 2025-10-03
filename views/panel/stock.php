@@ -218,6 +218,9 @@ function yith_pos_get_stock_breakdown_html( $product ) {
 		</p></div>
 	<?php endif; ?>
 	<p class="description"><?php echo esc_html__( 'Listing of products and variations with their stock and price. Initial read-only version.', 'yith-point-of-sale-for-woocommerce' ); ?></p>
+	<div class="yith-pos-stock-searchbar">
+		<input type="search" id="yith-pos-stock-search" class="regular-text" placeholder="<?php echo esc_attr__( 'Rechercher des produits… (ID ou Nom)', 'yith-point-of-sale-for-woocommerce' ); ?>" />
+	</div>
 	<table class="widefat fixed striped yith-pos-stock-table">
 		<thead>
 			<tr>
@@ -257,6 +260,9 @@ function yith_pos_get_stock_breakdown_html( $product ) {
 	<?php endif; ?>
 </div>
 <style>
+/* Search bar */
+.yith-pos-stock-searchbar { margin: 10px 0 12px; display:flex; justify-content:flex-start; }
+.yith-pos-stock-searchbar input { max-width: 420px; }
 /* Modal */
 .yith-pos-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; z-index: 100000; }
 .yith-pos-modal { position: fixed; top: 10vh; left: 50%; transform: translateX(-50%); width: min(720px, 92vw); background: #fff; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.2); display: none; z-index: 100001; }
@@ -448,6 +454,40 @@ function yith_pos_get_stock_breakdown_html( $product ) {
         )){ closeModal(); }
     });
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeModal(); } });
+})();
+</script>
+
+<script>
+(function(){
+    // Client-side filter for products on current page
+    var input = document.getElementById('yith-pos-stock-search');
+    if(!input) return;
+    function debounce(fn, wait){ var t; return function(){ clearTimeout(t); var a=arguments, c=this; t=setTimeout(function(){ fn.apply(c,a); }, wait); }; }
+    function norm(s){ return (s||'').toString().toLowerCase(); }
+    function filter(){
+        var q = norm(input.value).trim();
+        var rows = document.querySelectorAll('.yith-pos-stock-table tbody tr.yith-pos-stock-row');
+        rows.forEach(function(row){
+            var idCell = row.querySelector('.column-id');
+            var nameCell = row.querySelector('.column-name');
+            var pid = row.getAttribute('data-product-id');
+            var idText = idCell ? norm(idCell.textContent) : '';
+            var nameText = nameCell ? norm(nameCell.textContent) : '';
+            var match = !q || idText.indexOf(q) !== -1 || nameText.indexOf(q) !== -1;
+            row.style.display = match ? '' : 'none';
+            // Also hide associated breakdown and variations containers when product is hidden
+            if(pid){
+                var varContainer = document.getElementById('variations-' + pid);
+                var stockRow = document.getElementById('stock-' + pid);
+                if(!match){
+                    if(varContainer) varContainer.style.display = 'none';
+                    if(stockRow) stockRow.style.display = 'none';
+                    row.classList.remove('is-expanded');
+                }
+            }
+        });
+    }
+    input.addEventListener('input', debounce(filter, 150));
 })();
 </script>
 
