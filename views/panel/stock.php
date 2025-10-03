@@ -197,7 +197,7 @@ function yith_pos_get_stock_breakdown_html( $product ) {
 ?>
 <div class="wrap yith-pos-stock-wrap">
 	<?php
-	// Build export URL with nonce.
+	// Prepare export URL and import nonce for modal.
 	$export_nonce = wp_create_nonce( 'yith_pos_stock_export' );
 	$export_url   = add_query_arg(
 		array(
@@ -206,14 +206,10 @@ function yith_pos_get_stock_breakdown_html( $product ) {
 		),
 		admin_url( 'admin-post.php' )
 	);
+	$import_action = admin_url( 'admin-post.php?action=yith_pos_import_stock' );
 	?>
-	<div class="yith-pos-stock-toolbar" style="float:right; display:flex; gap:8px; align-items:center;">
-		<a href="<?php echo esc_url( $export_url ); ?>" class="button button-primary"><?php echo esc_html__( 'Export CSV', 'yith-point-of-sale-for-woocommerce' ); ?></a>
-		<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php?action=yith_pos_import_stock' ) ); ?>">
-			<?php wp_nonce_field( 'yith_pos_stock_import' ); ?>
-			<input type="file" name="yith_pos_stock_file" accept=".csv" required />
-			<button type="submit" class="button"><?php echo esc_html__( 'Import CSV', 'yith-point-of-sale-for-woocommerce' ); ?></button>
-		</form>
+	<div style="float:right;">
+		<button type="button" class="button button-primary" id="yith-pos-open-ie-modal"><?php echo esc_html__( 'Import & Export', 'yith-point-of-sale-for-woocommerce' ); ?></button>
 	</div>
 	<h2><?php echo esc_html__( 'Stock', 'yith-point-of-sale-for-woocommerce' ); ?></h2>
 	<?php if ( isset( $_GET['yith_pos_import_updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
@@ -261,7 +257,16 @@ function yith_pos_get_stock_breakdown_html( $product ) {
 	<?php endif; ?>
 </div>
 <style>
-.yith-pos-stock-toolbar form{ display:inline-flex; gap:6px; align-items:center; }
+/* Modal */
+.yith-pos-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; z-index: 100000; }
+.yith-pos-modal { position: fixed; top: 10vh; left: 50%; transform: translateX(-50%); width: min(720px, 92vw); background: #fff; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.2); display: none; z-index: 100001; }
+.yith-pos-modal header { display:flex; align-items:center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #e5e7eb; }
+.yith-pos-modal .content { padding: 16px; }
+.yith-pos-modal .actions { padding: 12px 16px; border-top: 1px solid #e5e7eb; display:flex; justify-content: flex-end; gap:8px; }
+.yith-pos-modal .row { display:flex; gap:16px; align-items:center; margin-bottom: 12px; }
+.yith-pos-modal .row form { display:inline-flex; gap:8px; align-items:center; }
+.yith-pos-modal .muted { color:#6b7280; font-size: 12px; }
+.yith-pos-modal .close { background: transparent; border: 0; font-size: 20px; line-height: 1; cursor: pointer; }
 .yith-pos-stock-table .button-link { text-decoration: none; font-size: 14px; }
 .yith-pos-stock-table .column-toggle { white-space: nowrap; }
 
@@ -422,7 +427,56 @@ function yith_pos_get_stock_breakdown_html( $product ) {
             })
             .catch(function(){ btn.disabled = false; alert('Error'); });
     });
+
+    // Import/Export modal behavior
+    var openBtn = document.getElementById('yith-pos-open-ie-modal');
+    function getOverlay(){ return document.getElementById('yith-pos-ie-overlay'); }
+    function getModal(){ return document.getElementById('yith-pos-ie-modal'); }
+    function openModal(){ var o=getOverlay(), m=getModal(); if(o) o.style.display='block'; if(m) m.style.display='block'; }
+    function closeModal(){ var o=getOverlay(), m=getModal(); if(o) o.style.display='none'; if(m) m.style.display='none'; }
+    if(openBtn){ openBtn.addEventListener('click', openModal); }
+    document.addEventListener('click', function(e){
+        // Open modal via delegation as a fallback
+        if(e.target && e.target.closest && e.target.closest('#yith-pos-open-ie-modal')){
+            openModal();
+            return;
+        }
+        if(e.target && (
+            e.target.id === 'yith-pos-ie-overlay' ||
+            e.target.closest('#yith-pos-ie-close') ||
+            e.target.closest('#yith-pos-ie-close-2')
+        )){ closeModal(); }
+    });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeModal(); } });
 })();
 </script>
+
+<!-- Import/Export Modal -->
+<div class="yith-pos-modal-overlay" id="yith-pos-ie-overlay"></div>
+<div class="yith-pos-modal" id="yith-pos-ie-modal" role="dialog" aria-modal="true" aria-labelledby="yith-pos-ie-title" aria-hidden="true">
+  <header>
+    <h2 id="yith-pos-ie-title"><?php echo esc_html__( 'Import & Export Stock', 'yith-point-of-sale-for-woocommerce' ); ?></h2>
+    <button type="button" class="close" id="yith-pos-ie-close" aria-label="Close">×</button>
+  </header>
+  <div class="content">
+    <h2 style="margin-top: 10px;">Exporter les stocks</h2>
+    <div>
+      <p class="muted"><?php echo esc_html__( 'Télécharger le stock des produts en CSV.', 'yith-point-of-sale-for-woocommerce' ); ?></p>  
+      <a style="margin-top: 10px;" href="<?php echo esc_url( $export_url ); ?>" class="button button-primary"><?php echo esc_html__( 'Export CSV', 'yith-point-of-sale-for-woocommerce' ); ?></a>
+    </div>
+    <h2 style="margin-top: 30px;">Import</h2>
+    <div>
+      <form method="post" enctype="multipart/form-data" action="<?php echo esc_url( $import_action ); ?>">
+        <?php wp_nonce_field( 'yith_pos_stock_import' ); ?>
+        <input type="file" name="yith_pos_stock_file" accept=".csv" required />
+        <button type="submit" class="button"><?php echo esc_html__( 'Import CSV', 'yith-point-of-sale-for-woocommerce' ); ?></button>
+      </form>
+      <span class="muted"><?php echo esc_html__( 'Importer un fichier CSV, seuls les champs stocks seront pris en compte', 'yith-point-of-sale-for-woocommerce' ); ?></span>
+    </div>
+  </div>
+  <div class="actions">
+    <button type="button" class="button" id="yith-pos-ie-close-2"><?php echo esc_html__( 'Close', 'yith-point-of-sale-for-woocommerce' ); ?></button>
+  </div>
+</div>
 
 
