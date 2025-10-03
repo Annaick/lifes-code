@@ -196,7 +196,31 @@ function yith_pos_get_stock_breakdown_html( $product ) {
 }
 ?>
 <div class="wrap yith-pos-stock-wrap">
+	<?php
+	// Build export URL with nonce.
+	$export_nonce = wp_create_nonce( 'yith_pos_stock_export' );
+	$export_url   = add_query_arg(
+		array(
+			'action'   => 'yith_pos_export_stock',
+			'_wpnonce' => $export_nonce,
+		),
+		admin_url( 'admin-post.php' )
+	);
+	?>
+	<div class="yith-pos-stock-toolbar" style="float:right; display:flex; gap:8px; align-items:center;">
+		<a href="<?php echo esc_url( $export_url ); ?>" class="button button-primary"><?php echo esc_html__( 'Export CSV', 'yith-point-of-sale-for-woocommerce' ); ?></a>
+		<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php?action=yith_pos_import_stock' ) ); ?>">
+			<?php wp_nonce_field( 'yith_pos_stock_import' ); ?>
+			<input type="file" name="yith_pos_stock_file" accept=".csv" required />
+			<button type="submit" class="button"><?php echo esc_html__( 'Import CSV', 'yith-point-of-sale-for-woocommerce' ); ?></button>
+		</form>
+	</div>
 	<h2><?php echo esc_html__( 'Stock', 'yith-point-of-sale-for-woocommerce' ); ?></h2>
+	<?php if ( isset( $_GET['yith_pos_import_updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+		<div class="notice notice-success is-dismissible"><p>
+			<?php printf( esc_html__( 'Stock updated for %d rows.', 'yith-point-of-sale-for-woocommerce' ), absint( $_GET['yith_pos_import_updated'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+		</p></div>
+	<?php endif; ?>
 	<p class="description"><?php echo esc_html__( 'Listing of products and variations with their stock and price. Initial read-only version.', 'yith-point-of-sale-for-woocommerce' ); ?></p>
 	<table class="widefat fixed striped yith-pos-stock-table">
 		<thead>
@@ -237,6 +261,7 @@ function yith_pos_get_stock_breakdown_html( $product ) {
 	<?php endif; ?>
 </div>
 <style>
+.yith-pos-stock-toolbar form{ display:inline-flex; gap:6px; align-items:center; }
 .yith-pos-stock-table .button-link { text-decoration: none; font-size: 14px; }
 .yith-pos-stock-table .column-toggle { white-space: nowrap; }
 

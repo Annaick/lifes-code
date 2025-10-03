@@ -102,6 +102,10 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 			add_action( 'wp_ajax_yith_pos_transfer_stock', array( $this, 'ajax_transfer_stock' ) );
 			add_action( 'wp_ajax_yith_pos_add_store_stock', array( $this, 'ajax_add_store_stock' ) );
 
+			// Admin-post: Export / Import stock CSV (Excel-compatible).
+			add_action( 'admin_post_yith_pos_export_stock', array( $this, 'handle_export_stock' ) );
+			add_action( 'admin_post_yith_pos_import_stock', array( $this, 'handle_import_stock' ) );
+
 			add_filter( 'woocommerce_payment_gateways_setting_columns', array( $this, 'gateway_enabled_pos_column' ), 10, 1 );
 			add_action( 'woocommerce_payment_gateways_setting_column_status_pos', array( $this, 'gateway_pos_column_content' ), 10, 1 );
 
@@ -510,6 +514,153 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 		public function stock_tab() {
 			echo "<div class='woocommerce-page'>";
 			yith_pos_get_view( 'panel/stock.php' );
+		}
+
+		/**
+		 * Handle CSV export for stock (Excel-compatible).
+		 */
+		public function handle_export_stock() {
+			if ( ! current_user_can( 'yith_pos_manage_pos_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_die( esc_html__( 'Permission denied', 'yith-point-of-sale-for-woocommerce' ), 403 );
+			}
+			$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+			if ( ! wp_verify_nonce( $nonce, 'yith_pos_stock_export' ) ) {
+				wp_die( esc_html__( 'Invalid nonce', 'yith-point-of-sale-for-woocommerce' ), 400 );
+			}
+
+			$filename = 'pos-stock-' . date( 'Y-m-d-His' ) . '.csv';
+			header( 'Content-Type: text/csv; charset=utf-8' );
+			header( 'Content-Disposition: attachment; filename=' . $filename );
+			header( 'Pragma: no-cache' );
+			header( 'Expires: 0' );
+
+			$out = fopen( 'php://output', 'w' );
+			$headers = array( 'product_id', 'variation_id', 'sku', 'name', 'product_type', 'location_type', 'store_id', 'store_name', 'manage_stock', 'stock_qty' );
+			fputcsv( $out, $headers );
+
+			$args = array(
+				'post_type'      => array( 'product', 'product_variation' ),
+				'post_status'    => array( 'publish', 'private' ),
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			);
+			$ids = get_posts( $args ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query
+
+			$stores = yith_pos_get_stores( array( 'fields' => 'stores' ) );
+			$store_map = array();
+			if ( is_array( $stores ) ) {
+				foreach ( $stores as $s ) {
+					if ( $s instanceof YITH_POS_Store ) {
+						$store_map[ (int) $s->get_id() ] = $s->get_name();
+					}
+				}
+			}
+
+			foreach ( $ids as $pid ) {
+				$product = wc_get_product( $pid );
+				if ( ! $product ) {
+					continue;
+				}
+				$is_variation = $product->is_type( 'variation' );
+				$variation_id = $is_variation ? $product->get_id() : '';
+				$parent_id    = $is_variation ? $product->get_parent_id() : $product->get_id();
+				$sku          = $product->get_sku();
+				$name         = $product->get_name();
+				$type         = $product->get_type();
+				$manage_stock = $product->managing_stock() ? 'yes' : 'no';
+
+				// General stock row.
+				$qty = $product->managing_stock() ? (int) $product->get_stock_quantity() : 0;
+				fputcsv( $out, array( $parent_id, $variation_id, $sku, $name, $type, 'general', '', '', $manage_stock, $qty ) );
+
+				// Per-store rows.
+				$multi_enabled = 'yes' === $product->get_meta( '_yith_pos_multistock_enabled', true );
+				$multi_stock   = $product->get_meta( '_yith_pos_multistock' );
+				$multi_stock   = ! ! $multi_stock ? $multi_stock : array();
+				if ( $multi_enabled && ! empty( $multi_stock ) ) {
+					foreach ( $multi_stock as $sid => $sqty ) {
+						$store_id   = (int) $sid;
+						$store_name = $store_map[ $store_id ] ?? ( 'Store #' . $store_id );
+						fputcsv( $out, array( $parent_id, $variation_id, $sku, $name, $type, 'store', $store_id, $store_name, $manage_stock, (int) $sqty ) );
+					}
+				}
+			}
+
+			fclose( $out );
+			exit;
+		}
+
+		/**
+		 * Handle CSV import for stock updates.
+		 */
+		public function handle_import_stock() {
+			if ( ! current_user_can( 'yith_pos_manage_pos_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_die( esc_html__( 'Permission denied', 'yith-point-of-sale-for-woocommerce' ), 403 );
+			}
+			$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+			if ( ! wp_verify_nonce( $nonce, 'yith_pos_stock_import' ) ) {
+				wp_die( esc_html__( 'Invalid nonce', 'yith-point-of-sale-for-woocommerce' ), 400 );
+			}
+			if ( empty( $_FILES['yith_pos_stock_file']['tmp_name'] ) ) {
+				wp_die( esc_html__( 'No file uploaded', 'yith-point-of-sale-for-woocommerce' ), 400 );
+			}
+
+			$fp = fopen( $_FILES['yith_pos_stock_file']['tmp_name'], 'r' );
+			if ( ! $fp ) {
+				wp_die( esc_html__( 'Cannot open uploaded file', 'yith-point-of-sale-for-woocommerce' ), 400 );
+			}
+
+			// Read header.
+			$header = fgetcsv( $fp );
+			$expected = array( 'product_id', 'variation_id', 'sku', 'name', 'product_type', 'location_type', 'store_id', 'store_name', 'manage_stock', 'stock_qty' );
+			if ( empty( $header ) || count( $header ) < 10 ) {
+				fclose( $fp );
+				wp_die( esc_html__( 'Invalid CSV format', 'yith-point-of-sale-for-woocommerce' ), 400 );
+			}
+
+			$updated = 0;
+			while ( ( $row = fgetcsv( $fp ) ) !== false ) {
+				// Map columns by position to be resilient to header text changes.
+				list( $product_id, $variation_id, $sku, $name, $type, $loc_type, $store_id, $store_name, $manage_stock, $stock_qty ) = array_pad( $row, 10, '' );
+				$product_id   = absint( $product_id );
+				$variation_id = '' !== $variation_id ? absint( $variation_id ) : 0;
+				$target_id    = $variation_id ? $variation_id : $product_id;
+				if ( ! $target_id ) {
+					continue;
+				}
+				$product = wc_get_product( $target_id );
+				if ( ! $product ) {
+					continue;
+				}
+
+				$manage_bool = ( 'yes' === strtolower( trim( (string) $manage_stock ) ) );
+				$qty         = wc_stock_amount( $stock_qty );
+
+				if ( 'general' === $loc_type ) {
+					// General WC stock and manage flag.
+					$product->set_manage_stock( $manage_bool );
+					if ( $manage_bool ) {
+						$product->set_stock_quantity( $qty );
+					}
+					$product->save();
+					$updated++;
+				} elseif ( 'store' === $loc_type ) {
+					$store_id_i  = absint( $store_id );
+					$multi_stock = $product->get_meta( '_yith_pos_multistock' );
+					$multi_stock = ! ! $multi_stock ? $multi_stock : array();
+					$multi_stock[ $store_id_i ] = $qty;
+					$product->update_meta_data( '_yith_pos_multistock_enabled', 'yes' );
+					$product->update_meta_data( '_yith_pos_multistock', $multi_stock );
+					$product->save();
+					$updated++;
+				}
+			}
+
+			fclose( $fp );
+			// Redirect back to stock tab with notice.
+			$redirect = add_query_arg( array( 'page' => $this->panel_page, 'tab' => 'stock', 'yith_pos_import_updated' => $updated ), admin_url( 'admin.php' ) );
+			wp_safe_redirect( $redirect );
+			exit;
 		}
 
 		/**
