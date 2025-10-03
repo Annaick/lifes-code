@@ -120,6 +120,12 @@ $args = array(
 					'type'              => 'text',
 					'custom_attributes' => 'placeholder="yourwebsite.com" validate="true" data-message="' . __( 'Please provide a valid website url', 'yith-point-of-sale-for-woocommerce' ) . '"',
 				),
+				'send_customer_email'     => array(
+					'label' => __( 'Send customer emails for POS orders', 'yith-point-of-sale-for-woocommerce' ),
+					'desc'  => __( 'Enable to send order emails to the selected customer for POS orders from this store. Disable to prevent sending any customer order emails for POS orders.', 'yith-point-of-sale-for-woocommerce' ),
+					'type'  => 'onoff',
+					'std'   => 'yes',
+				),
 				'title'                   => array(
 					'desc' => __( 'Social', 'yith-point-of-sale-for-woocommerce' ),
 					'type' => 'title',

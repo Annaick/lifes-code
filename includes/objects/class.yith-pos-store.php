@@ -37,6 +37,7 @@ if ( ! class_exists( 'YITH_POS_Store' ) ) {
 			'managers'      => array(),
 			'cashiers'      => array(),
 			'enabled'       => 'yes',
+			'send_customer_email' => 'yes',
 		);
 
 		/**
@@ -169,6 +170,17 @@ if ( ! class_exists( 'YITH_POS_Store' ) ) {
 		 */
 		public function get_email( $context = 'view' ) {
 			return $this->get_prop( 'email', $context );
+		}
+
+		/**
+		 * Return whether to send customer emails for POS orders for this store.
+		 *
+		 * @param string $context What the value is for. Valid values are view and edit.
+		 *
+		 * @return string 'yes' or 'no'
+		 */
+		public function get_send_customer_email( $context = 'view' ) {
+			return $this->get_prop( 'send_customer_email', $context );
 		}
 
 		/**
@@ -357,6 +369,15 @@ if ( ! class_exists( 'YITH_POS_Store' ) ) {
 		 */
 		public function set_email( $value ) {
 			$this->set_prop( 'email', $value );
+		}
+
+		/**
+		 * Set whether to send customer emails for POS orders for this store.
+		 *
+		 * @param bool|string $value The value to set. Accepts boolean or 'yes'/'no'.
+		 */
+		public function set_send_customer_email( $value ) {
+			$this->set_prop( 'send_customer_email', wc_bool_to_string( $value ) );
 		}
 
 		/**

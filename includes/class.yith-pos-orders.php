@@ -41,6 +41,19 @@ if ( ! class_exists( 'YITH_POS_Orders' ) ) {
 			add_action( 'woocommerce_update_order', array( $this, 'update_order_lookups' ), 10, 2 );
 
 			add_filter( 'woocommerce_order_data_store_cpt_get_orders_query', array( $this, 'handle_custom_query_vars' ), 10, 2 );
+
+			// Conditionally disable WooCommerce customer emails for POS orders if store option is disabled.
+			$customer_email_filters = array(
+				'woocommerce_email_enabled_customer_processing_order',
+				'woocommerce_email_enabled_customer_completed_order',
+				'woocommerce_email_enabled_customer_on_hold_order',
+				'woocommerce_email_enabled_customer_refunded_order',
+				'woocommerce_email_enabled_customer_partially_refunded_order',
+				'woocommerce_email_enabled_customer_invoice',
+			);
+			foreach ( $customer_email_filters as $filter ) {
+				add_filter( $filter, array( $this, 'maybe_disable_customer_email' ), 10, 2 );
+			}
 		}
 
 		/**
@@ -175,6 +188,32 @@ if ( ! class_exists( 'YITH_POS_Orders' ) ) {
 			$statuses['wc-achat-boutique'] = __( 'Achat Boutique', 'yith-point-of-sale-for-woocommerce' );
 			$statuses['wc-achat-salon']    = __( 'Achat Salon', 'yith-point-of-sale-for-woocommerce' );
 			return $statuses;
+		}
+
+		/**
+		 * Disable customer emails for POS orders if store option is off and a customer is selected.
+		 *
+		 * @param bool             $enabled Whether the email is enabled.
+		 * @param WC_Order|mixed   $order   The order object.
+		 *
+		 * @return bool
+		 */
+		public function maybe_disable_customer_email( $enabled, $order ) {
+			if ( ! $enabled ) {
+				return $enabled;
+			}
+			if ( ! ( $order instanceof WC_Order ) ) {
+				return $enabled;
+			}
+			if ( yith_pos_is_pos_order( $order ) ) {
+				$store_id = absint( $order->get_meta( '_yith_pos_store' ) );
+				$store    = $store_id ? yith_pos_get_store( $store_id ) : false;
+				$has_customer_account = $order->get_customer_id() > 0;
+				if ( $store && 'no' === $store->get_send_customer_email() && $has_customer_account ) {
+					return false;
+				}
+			}
+			return $enabled;
 		}
 
 		/**
