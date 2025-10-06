@@ -74,7 +74,7 @@ function yith_pos_render_stock_row( $product ) {
 				if ( ! $variation ) {
 					continue;
 				}
-                $var_name     = $variation->get_name();
+                $var_name     = wp_strip_all_tags( $variation->get_name() );
 				$price_html_v = $variation->get_price_html();
 				$manage_v     = $variation->managing_stock();
 				$stock_v      = $manage_v ? wc_stock_amount( $variation->get_stock_quantity() ) : __( '—', 'yith-point-of-sale-for-woocommerce' );
