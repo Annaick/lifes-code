@@ -83,6 +83,7 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 
 			add_action( 'yith_pos_dashboard_tab', array( $this, 'dashboard_tab' ) );
 			add_action( 'yith_pos_stock_tab', array( $this, 'stock_tab' ) );
+			add_action( 'yith_pos_expirations_tab', array( $this, 'expirations_tab' ) );
 
 			add_filter( 'yith_plugin_fw_get_field_template_path', array( $this, 'add_custom_field_path' ), 20, 2 );
 
@@ -102,9 +103,18 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 			add_action( 'wp_ajax_yith_pos_transfer_stock', array( $this, 'ajax_transfer_stock' ) );
 			add_action( 'wp_ajax_yith_pos_add_store_stock', array( $this, 'ajax_add_store_stock' ) );
 
+			// AJAX: Expirations CRUD.
+			add_action( 'wp_ajax_yith_pos_add_expiration', array( $this, 'ajax_add_expiration' ) );
+			add_action( 'wp_ajax_yith_pos_update_expiration', array( $this, 'ajax_update_expiration' ) );
+			add_action( 'wp_ajax_yith_pos_delete_expiration', array( $this, 'ajax_delete_expiration' ) );
+
 			// Admin-post: Export / Import stock CSV (Excel-compatible).
 			add_action( 'admin_post_yith_pos_export_stock', array( $this, 'handle_export_stock' ) );
 			add_action( 'admin_post_yith_pos_import_stock', array( $this, 'handle_import_stock' ) );
+
+			// Admin-post: Export / Import expirations CSV.
+			add_action( 'admin_post_yith_pos_export_expirations', array( $this, 'handle_export_expirations' ) );
+			add_action( 'admin_post_yith_pos_import_expirations', array( $this, 'handle_import_expirations' ) );
 
 			add_filter( 'woocommerce_payment_gateways_setting_columns', array( $this, 'gateway_enabled_pos_column' ), 10, 1 );
 			add_action( 'woocommerce_payment_gateways_setting_column_status_pos', array( $this, 'gateway_pos_column_content' ), 10, 1 );
@@ -184,6 +194,12 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 					'title'       => __( 'Stock', 'yith-point-of-sale-for-woocommerce' ),
 					'description' => __( 'View and manage stock by product and variation', 'yith-point-of-sale-for-woocommerce' ),
 					'icon'        => '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a.75.75 0 011.06 0L21.218 12M4.5 9.75V19.5A1.5 1.5 0 006 21h12a1.5 1.5 0 001.5-1.5V9.75M8.25 21V12h7.5v9"></path></svg>',
+					'capability'  => 'yith_pos_manage_pos_options',
+				),
+				'expirations'   => array(
+					'title'       => __( 'Expirations', 'yith-point-of-sale-for-woocommerce' ),
+					'description' => __( 'Track perishable lots and expiration dates', 'yith-point-of-sale-for-woocommerce' ),
+					'icon'        => '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
 					'capability'  => 'yith_pos_manage_pos_options',
 				),
 				'stores'        => array(
@@ -517,6 +533,14 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 		}
 
 		/**
+		 * Render Expirations tab
+		 */
+		public function expirations_tab() {
+			echo "<div class='woocommerce-page'>";
+			yith_pos_get_view( 'panel/expirations.php' );
+		}
+
+		/**
 		 * Handle CSV export for stock (Excel-compatible).
 		 */
 		public function handle_export_stock() {
@@ -664,6 +688,149 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 		}
 
 		/**
+		 * Handle CSV export for expirations.
+		 * Columns: product_id, variation_id, sku, name, product_type, code, date(YYYY-MM-DD), qty
+		 */
+		public function handle_export_expirations() {
+			if ( ! current_user_can( 'yith_pos_manage_pos_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_die( esc_html__( 'Permission denied', 'yith-point-of-sale-for-woocommerce' ), 403 );
+			}
+			$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+			if ( ! wp_verify_nonce( $nonce, 'yith_pos_exp_export' ) ) {
+				wp_die( esc_html__( 'Invalid nonce', 'yith-point-of-sale-for-woocommerce' ), 400 );
+			}
+
+			$filename = 'pos-expirations-' . date( 'Y-m-d-His' ) . '.csv';
+			header( 'Content-Type: text/csv; charset=utf-8' );
+			header( 'Content-Disposition: attachment; filename=' . $filename );
+			header( 'Pragma: no-cache' );
+			header( 'Expires: 0' );
+
+			$out = fopen( 'php://output', 'w' );
+			$headers = array( 'product_id', 'variation_id', 'sku', 'name', 'product_type', 'code', 'date', 'qty' );
+			fputcsv( $out, $headers );
+
+			$args = array(
+				'post_type'      => array( 'product', 'product_variation' ),
+				'post_status'    => array( 'publish', 'private' ),
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			);
+			$ids = get_posts( $args ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query
+
+			foreach ( $ids as $pid ) {
+				$product = wc_get_product( $pid );
+				if ( ! $product ) {
+					continue;
+				}
+				$is_variation = $product->is_type( 'variation' );
+				$variation_id = $is_variation ? $product->get_id() : '';
+				$parent_id    = $is_variation ? $product->get_parent_id() : $product->get_id();
+				$sku          = $product->get_sku();
+				$name         = $product->get_name();
+				$type         = $product->get_type();
+
+				$entries = $product->get_meta( '_yith_pos_expirations' );
+				$entries = is_array( $entries ) ? $entries : array();
+				usort( $entries, function( $a, $b ) { return strcmp( (string) ( $a['date'] ?? '' ), (string) ( $b['date'] ?? '' ) ); } );
+				if ( empty( $entries ) ) {
+					// still output an empty row for visibility (optional). Skip to keep CSV compact.
+					continue;
+				}
+				foreach ( $entries as $e ) {
+					$code = isset( $e['code'] ) ? (string) $e['code'] : '';
+					$date = isset( $e['date'] ) ? (string) $e['date'] : '';
+					$qty  = isset( $e['qty'] ) ? (int) $e['qty'] : 0;
+					fputcsv( $out, array( $parent_id, $variation_id, $sku, $name, $type, $code, $date, $qty ) );
+				}
+			}
+
+			fclose( $out );
+			exit;
+		}
+
+		/**
+		 * Handle CSV import for expirations.
+		 * Columns: product_id, variation_id, sku, name, product_type, code, date(YYYY-MM-DD), qty
+		 */
+		public function handle_import_expirations() {
+			if ( ! current_user_can( 'yith_pos_manage_pos_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_die( esc_html__( 'Permission denied', 'yith-point-of-sale-for-woocommerce' ), 403 );
+			}
+			$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+			if ( ! wp_verify_nonce( $nonce, 'yith_pos_exp_import' ) ) {
+				wp_die( esc_html__( 'Invalid nonce', 'yith-point-of-sale-for-woocommerce' ), 400 );
+			}
+			if ( empty( $_FILES['yith_pos_exp_file']['tmp_name'] ) ) {
+				wp_die( esc_html__( 'No file uploaded', 'yith-point-of-sale-for-woocommerce' ), 400 );
+			}
+
+			$fp = fopen( $_FILES['yith_pos_exp_file']['tmp_name'], 'r' );
+			if ( ! $fp ) {
+				wp_die( esc_html__( 'Cannot open uploaded file', 'yith-point-of-sale-for-woocommerce' ), 400 );
+			}
+
+			$header   = fgetcsv( $fp );
+			$expected = array( 'product_id', 'variation_id', 'sku', 'name', 'product_type', 'code', 'date', 'qty' );
+			if ( empty( $header ) || count( $header ) < 8 ) {
+				fclose( $fp );
+				wp_die( esc_html__( 'Invalid CSV format', 'yith-point-of-sale-for-woocommerce' ), 400 );
+			}
+
+			$updated = 0;
+			while ( ( $row = fgetcsv( $fp ) ) !== false ) {
+				list( $product_id, $variation_id, $sku, $name, $type, $code, $date, $qty ) = array_pad( $row, 8, '' );
+				$product_id   = absint( $product_id );
+				$variation_id = '' !== $variation_id ? absint( $variation_id ) : 0;
+				$target_id    = $variation_id ? $variation_id : $product_id;
+				if ( ! $target_id ) {
+					continue;
+				}
+				$code = sanitize_text_field( (string) $code );
+				$date = sanitize_text_field( (string) $date );
+				$qty  = max( 0, intval( $qty ) );
+
+				$product = wc_get_product( $target_id );
+				if ( ! $product ) {
+					continue;
+				}
+				$entries = $product->get_meta( '_yith_pos_expirations' );
+				$entries = is_array( $entries ) ? $entries : array();
+
+				// Update existing by code or add new.
+				$found = false;
+				foreach ( $entries as &$e ) {
+					if ( isset( $e['code'] ) && $e['code'] === $code ) {
+						$e['date'] = $date;
+						$e['qty']  = $qty;
+						$found     = true;
+						break;
+					}
+				}
+				unset( $e );
+				if ( ! $found ) {
+					$exp_id    = (int) ( time() . wp_rand( 100, 999 ) );
+					$entries[] = array(
+						'id'   => $exp_id,
+						'qty'  => $qty,
+						'date' => $date,
+						'code' => $code,
+					);
+				}
+
+				usort( $entries, function( $a, $b ) { return strcmp( (string) ( $a['date'] ?? '' ), (string) ( $b['date'] ?? '' ) ); } );
+				$product->update_meta_data( '_yith_pos_expirations', $entries );
+				$product->save();
+				$updated++;
+			}
+
+			fclose( $fp );
+			$redirect = add_query_arg( array( 'page' => $this->panel_page, 'tab' => 'expirations', 'yith_pos_exp_import_updated' => $updated ), admin_url( 'admin.php' ) );
+			wp_safe_redirect( $redirect );
+			exit;
+		}
+
+		/**
 		 * AJAX: Update stock for general (Principale) or per-store for a product/variation.
 		 */
 		public function ajax_update_stock() {
@@ -789,6 +956,130 @@ if ( ! class_exists( 'YITH_POS_Admin' ) ) {
 			$product->save();
 
 			wp_send_json_success( array( 'store_id' => $store_id, 'qty' => 0 ) );
+		}
+
+		/**
+		 * AJAX: Add expiration entry to a product/variation.
+		 */
+		public function ajax_add_expiration() {
+			check_ajax_referer( 'yith_pos_exp_nonce', 'nonce' );
+			if ( ! current_user_can( 'yith_pos_manage_pos_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied', 'yith-point-of-sale-for-woocommerce' ) ), 403 );
+			}
+			$product_id = absint( $_POST['product_id'] ?? 0 );
+			$qty        = max( 0, intval( wp_unslash( $_POST['qty'] ?? 0 ) ) );
+			$date       = sanitize_text_field( wp_unslash( $_POST['date'] ?? '' ) ); // YYYY-MM-DD
+			$code       = sanitize_text_field( wp_unslash( $_POST['code'] ?? '' ) );
+			if ( ! $product_id || ! $date || '' === $code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid parameters', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+			$product = wc_get_product( $product_id );
+			if ( ! $product ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid product', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+			$entries = $product->get_meta( '_yith_pos_expirations' );
+			$entries = is_array( $entries ) ? $entries : array();
+			// Enforce unique code per product
+			foreach ( $entries as $e ) {
+				if ( isset( $e['code'] ) && $e['code'] === $code ) {
+					wp_send_json_error( array( 'message' => __( 'Code already exists', 'yith-point-of-sale-for-woocommerce' ) ), 409 );
+				}
+			}
+			$exp_id  = (int) ( time() . wp_rand( 100, 999 ) );
+			$entries[] = array(
+				'id'   => $exp_id,
+				'qty'  => $qty,
+				'date' => $date,
+				'code' => $code,
+			);
+			usort( $entries, function( $a, $b ) { return strcmp( (string) ( $a['date'] ?? '' ), (string) ( $b['date'] ?? '' ) ); } );
+			$product->update_meta_data( '_yith_pos_expirations', $entries );
+			$product->save();
+			wp_send_json_success( array( 'id' => $exp_id, 'qty' => $qty, 'date' => $date, 'code' => $code ) );
+		}
+
+		/**
+		 * AJAX: Update an expiration entry.
+		 */
+		public function ajax_update_expiration() {
+			check_ajax_referer( 'yith_pos_exp_nonce', 'nonce' );
+			if ( ! current_user_can( 'yith_pos_manage_pos_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied', 'yith-point-of-sale-for-woocommerce' ) ), 403 );
+			}
+			$product_id = absint( $_POST['product_id'] ?? 0 );
+			$exp_id     = absint( $_POST['id'] ?? 0 );
+			$qty        = max( 0, intval( wp_unslash( $_POST['qty'] ?? 0 ) ) );
+			$date       = sanitize_text_field( wp_unslash( $_POST['date'] ?? '' ) );
+			$code       = sanitize_text_field( wp_unslash( $_POST['code'] ?? '' ) );
+			if ( ! $product_id || ! $exp_id || ! $date || '' === $code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid parameters', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+			$product = wc_get_product( $product_id );
+			if ( ! $product ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid product', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+			$entries = $product->get_meta( '_yith_pos_expirations' );
+			$entries = is_array( $entries ) ? $entries : array();
+			$found   = false;
+			// Ensure code is unique across other entries
+			foreach ( $entries as $chk ) {
+				if ( isset( $chk['id'], $chk['code'] ) && (int) $chk['id'] !== $exp_id && $chk['code'] === $code ) {
+					wp_send_json_error( array( 'message' => __( 'Code already exists', 'yith-point-of-sale-for-woocommerce' ) ), 409 );
+				}
+			}
+			foreach ( $entries as &$entry ) {
+				if ( isset( $entry['id'] ) && (int) $entry['id'] === $exp_id ) {
+					$entry['qty']  = $qty;
+					$entry['date'] = $date;
+					$entry['code'] = $code;
+					$found = true;
+					break;
+				}
+			}
+			unset( $entry );
+			if ( ! $found ) {
+				wp_send_json_error( array( 'message' => __( 'Expiration not found', 'yith-point-of-sale-for-woocommerce' ) ), 404 );
+			}
+			usort( $entries, function( $a, $b ) { return strcmp( (string) ( $a['date'] ?? '' ), (string) ( $b['date'] ?? '' ) ); } );
+			$product->update_meta_data( '_yith_pos_expirations', $entries );
+			$product->save();
+			wp_send_json_success( array( 'id' => $exp_id, 'qty' => $qty, 'date' => $date, 'code' => $code ) );
+		}
+
+		/**
+		 * AJAX: Delete an expiration entry.
+		 */
+		public function ajax_delete_expiration() {
+			check_ajax_referer( 'yith_pos_exp_nonce', 'nonce' );
+			if ( ! current_user_can( 'yith_pos_manage_pos_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied', 'yith-point-of-sale-for-woocommerce' ) ), 403 );
+			}
+			$product_id = absint( $_POST['product_id'] ?? 0 );
+			$exp_id     = absint( $_POST['id'] ?? 0 );
+			if ( ! $product_id || ! $exp_id ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid parameters', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+			$product = wc_get_product( $product_id );
+			if ( ! $product ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid product', 'yith-point-of-sale-for-woocommerce' ) ), 400 );
+			}
+			$entries = $product->get_meta( '_yith_pos_expirations' );
+			$entries = is_array( $entries ) ? $entries : array();
+			$new     = array();
+			$removed = false;
+			foreach ( $entries as $entry ) {
+				if ( isset( $entry['id'] ) && (int) $entry['id'] === $exp_id ) {
+					$removed = true;
+					continue;
+				}
+				$new[] = $entry;
+			}
+			if ( ! $removed ) {
+				wp_send_json_error( array( 'message' => __( 'Expiration not found', 'yith-point-of-sale-for-woocommerce' ) ), 404 );
+			}
+			$product->update_meta_data( '_yith_pos_expirations', $new );
+			$product->save();
+			wp_send_json_success( array( 'id' => $exp_id ) );
 		}
 
 

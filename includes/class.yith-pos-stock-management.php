@@ -67,6 +67,10 @@ if ( ! class_exists( 'YITH_POS_Stock_Management' ) ) {
 		 */
 		public function restock_items_on_refund( $allowed, $order, $refunded_line_items ) {
 			if ( yith_pos_is_pos_order( $order ) ) {
+				// If global setting to disable auto-restock on refund is enabled, do nothing and prevent WC from restocking.
+				if ( 'yes' === get_option( 'yith_pos_disable_restock_on_refund', 'yes' ) ) {
+					return false;
+				}
 				$allowed  = false; // Disable the WooCommerce restock items.
 				$store_id = $order->get_meta( '_yith_pos_store' );
 				if ( $store_id ) {
