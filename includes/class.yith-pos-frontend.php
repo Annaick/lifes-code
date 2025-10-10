@@ -26,6 +26,11 @@ if ( ! class_exists( 'YITH_POS_Frontend' ) ) {
 
 			add_action( 'yith_pos_footer', array( $this, 'print_script_settings' ) );
 
+			// Define POS request constant for gateway availability
+			if ( ! defined( 'YITH_POS_REQUEST' ) ) {
+				define( 'YITH_POS_REQUEST', $this->is_pos_context() );
+			}
+
 			add_filter( 'woocommerce_rest_product_object_query', array( $this, 'extends_rest_product_query' ), 10, 2 );
 
 			// Product search.
@@ -49,6 +54,29 @@ if ( ! class_exists( 'YITH_POS_Frontend' ) ) {
 			add_action( 'rest_api_init', array( $this, 'generate_password_for_new_users' ) );
 		}
 
+		/**
+		 * Check if the current request is in POS context.
+		 *
+		 * @return bool
+		 */
+		protected function is_pos_context() {
+			// Check if we're on a POS page or if the request contains POS-specific parameters
+			$is_pos_page = is_yith_pos();
+
+			// Check for REST API requests from POS
+			$is_pos_rest = false;
+			if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+				$is_pos_rest = ! empty( $_REQUEST['yith_pos_request'] );
+			}
+
+			// Check for AJAX requests from POS
+			$is_pos_ajax = false;
+			if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+				$is_pos_ajax = ! empty( $_REQUEST['yith_pos_request'] );
+			}
+
+			return $is_pos_page || $is_pos_rest || $is_pos_ajax;
+		}
 		/**
 		 * Generate password for new users created through POS
 		 * even if WooCommerce settings require the password field to be set on checkout.
@@ -195,6 +223,12 @@ if ( ! class_exists( 'YITH_POS_Frontend' ) ) {
 
 						$data['parent_categories'] = $categories;
 						$changed                   = true;
+					}
+
+					// Clean product name to remove HTML tags that may be included in variation names
+					if ( isset( $data['name'] ) ) {
+						$data['name'] = yith_pos_clean_product_name( $data['name'] );
+						$changed      = true;
 					}
 
 					if ( $changed ) {

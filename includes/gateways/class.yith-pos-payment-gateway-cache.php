@@ -26,6 +26,24 @@ if ( ! class_exists( 'YITH_POS_Payment_Gateway_Cash' ) ) {
          */
         public $instructions = '';
 
+        /**
+         * Check if the gateway is available for use.
+         *
+         * @return bool
+         */
+        public function is_available() {
+            return $this->is_pos_request();
+        }
+
+        /**
+         * Check if this is a POS request.
+         *
+         * @return bool
+         */
+        protected function is_pos_request() {
+            return defined( 'YITH_POS_REQUEST' ) && YITH_POS_REQUEST;
+        }
+
 		/**
 		 * Constructor for the gateway.
 		 */
@@ -37,7 +55,6 @@ if ( ! class_exists( 'YITH_POS_Payment_Gateway_Cash' ) ) {
 
 			// Load the settings.
 			$this->init_form_fields();
-			$this->init_settings();
 
 			// Define user set variables.
 			$this->title        = $this->get_option( 'title' );

@@ -25,7 +25,25 @@ if ( ! class_exists( 'YITH_POS_Payment_Gateway_Chip_Pin' ) ) {
          * @var string $instructions
          */
         public $instructions = '';
-        
+
+        /**
+         * Check if the gateway is available for use.
+         *
+         * @return bool
+         */
+        public function is_available() {
+            return $this->is_pos_request();
+        }
+
+        /**
+         * Check if this is a POS request.
+         *
+         * @return bool
+         */
+        protected function is_pos_request() {
+            return defined( 'YITH_POS_REQUEST' ) && YITH_POS_REQUEST;
+        }
+
 		/**
 		 * Constructor for the gateway.
 		 */
@@ -65,7 +83,7 @@ if ( ! class_exists( 'YITH_POS_Payment_Gateway_Chip_Pin' ) ) {
 				'title'       => array(
 					'title'       => __( 'Title', 'yith-point-of-sale-for-woocommerce' ),
 					'type'        => 'text',
-					'description' => __( 'This is the title for the Cash Payment.', 'yith-point-of-sale-for-woocommerce' ),
+					'description' => __( 'This is the title for the Chip and Pin Payment.', 'yith-point-of-sale-for-woocommerce' ),
 					'default'     => __( 'Chip and Pin', 'yith-point-of-sale-for-woocommerce' ),
 					'desc_tip'    => true,
 				),

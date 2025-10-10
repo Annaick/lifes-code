@@ -104,7 +104,7 @@ $change        = $cash - $total;
 				$price_including_tax = $price_excluding_tax + $product_tax;
 				?>
 				<div class="product">
-					<div class="product__name"><?php echo esc_html( sprintf( '%s x %s', $product['quantity'], $product['name'] ) ); ?></div>
+					<div class="product__name"><?php echo esc_html( sprintf( '%s x %s', $product['quantity'], yith_pos_clean_product_name( $product['name'] ) ) ); ?></div>
 					<div class="product__sku" data-dep="_show_sku">
 						<span class="product__sku__label" data-dep_label="_sku_label"><?php esc_html_e( 'SKU:', 'yith-point-of-sale-for-woocommerce' ); ?></span>
 						<?php echo esc_html( $product['sku'] ); ?>
@@ -185,7 +185,7 @@ $change        = $cash - $total;
 		</div>
 		<div id="cashier" data-dep="_show_cashier">
 			<strong data-dep_label="_cashier_label"><?php esc_attr_e( 'Cashier', 'yith-point-of-sale-for-woocommerce' ); ?>
-				:</strong> Jane Doe
+				:</strong> <?php echo esc_html( yith_pos_get_first_name( 'Jane Doe' ) ); ?>
 		</div>
 	</div>
 	<div class="receipt-footer">

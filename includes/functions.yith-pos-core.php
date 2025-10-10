@@ -1130,6 +1130,26 @@ if ( ! function_exists( 'yith_pos_is_pos_order' ) ) {
 }
 
 
+if ( ! function_exists( 'yith_pos_clean_product_name' ) ) {
+	/**
+	 * Clean product name by removing HTML tags and unwanted characters
+	 *
+	 * @param string $product_name The product name to clean.
+	 *
+	 * @return string The cleaned product name.
+	 */
+	function yith_pos_clean_product_name( $product_name ) {
+		// Remove HTML tags
+		$clean_name = wp_strip_all_tags( $product_name );
+
+		// Remove any remaining HTML entities that might be left
+		$clean_name = html_entity_decode( $clean_name, ENT_QUOTES | ENT_HTML5 );
+
+		// Trim any extra whitespace
+		$clean_name = trim( $clean_name );
+
+		return apply_filters( 'yith_pos_clean_product_name', $clean_name, $product_name );
+	}
 if ( ! function_exists( 'yith_pos_get_cpt_object_name' ) ) {
 	/**
 	 * Get CPT object name.
@@ -1604,5 +1624,47 @@ if ( ! function_exists( 'yith_pos_translate' ) ) {
 	 */
 	function yith_pos_translate( $label ) {
 		return ! ! $label ? call_user_func( '__', $label, 'yith-point-of-sale-for-woocommerce' ) : '';
+	}
+}
+if ( ! function_exists( 'yith_pos_clean_product_name' ) ) {
+	/**
+	 * Clean product name by removing HTML tags and unwanted characters
+	 *
+	 * @param string $product_name The product name to clean.
+	 *
+	 * @return string The cleaned product name.
+	 */
+	function yith_pos_clean_product_name( $product_name ) {
+		// Remove HTML tags
+		$clean_name = wp_strip_all_tags( $product_name );
+
+		// Remove any remaining HTML entities that might be left
+		$clean_name = html_entity_decode( $clean_name, ENT_QUOTES | ENT_HTML5 );
+
+		// Trim any extra whitespace
+		$clean_name = trim( $clean_name );
+
+		return apply_filters( 'yith_pos_clean_product_name', $clean_name, $product_name );
+	}
+}
+
+if ( ! function_exists( 'yith_pos_get_first_name' ) ) {
+	/**
+	 * Extract first name from a full name
+	 *
+	 * @param string $full_name The full name.
+	 *
+	 * @return string The first name.
+	 */
+	function yith_pos_get_first_name( $full_name ) {
+		if ( empty( $full_name ) ) {
+			return '';
+		}
+
+		// Split the name by spaces and return the first part
+		$name_parts = explode( ' ', trim( $full_name ) );
+
+		return apply_filters( 'yith_pos_get_first_name', $name_parts[0], $full_name );
+	}
 	}
 }
