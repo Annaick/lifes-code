@@ -1139,17 +1139,18 @@ if ( ! function_exists( 'yith_pos_clean_product_name' ) ) {
 	 * @return string The cleaned product name.
 	 */
 	function yith_pos_clean_product_name( $product_name ) {
-		// Remove HTML tags
-		$clean_name = wp_strip_all_tags( $product_name );
-
-		// Remove any remaining HTML entities that might be left
-		$clean_name = html_entity_decode( $clean_name, ENT_QUOTES | ENT_HTML5 );
-
-		// Trim any extra whitespace
+		// D'abord décoder les entités (&lt;span&gt; -> <span>)
+		$decoded = html_entity_decode( $product_name, ENT_QUOTES | ENT_HTML5 );
+	
+		// Ensuite enlever toutes les balises HTML réelles
+		$clean_name = wp_strip_all_tags( $decoded );
+	
+		// Nettoyer les espaces
 		$clean_name = trim( $clean_name );
-
+	
 		return apply_filters( 'yith_pos_clean_product_name', $clean_name, $product_name );
 	}
+	
 if ( ! function_exists( 'yith_pos_get_cpt_object_name' ) ) {
 	/**
 	 * Get CPT object name.

@@ -14,7 +14,7 @@ $logo    = $receipt->get_logo();
 
 $products      = array(
 	array(
-		'name'     => _x( 'Sneakers', 'Sample product name', 'yith-point-of-sale-for-woocommerce' ),
+		'name'     => _x( 'Sinikerisa&lt;span&gt; - &lt;/span&gt;hehehe', 'Sample product name', 'yith-point-of-sale-for-woocommerce' ),
 		'quantity' => 1,
 		'price'    => 98,
 		'tax-5'    => 0,
