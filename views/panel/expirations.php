@@ -69,13 +69,60 @@ foreach ( (array) $product_ids as $pid_chk ) {
     }
 }
 
-// Reuse the stock breakdown helper for now; will be replaced by lot/expiry breakdown.
-if ( ! function_exists( 'yith_pos_render_exp_row' ) ) {
+// Helper to get the nearest expiration date for a product and its variations
+if ( ! function_exists( 'yith_pos_get_nearest_expiration' ) ) {
+	function yith_pos_get_nearest_expiration( $product ) {
+		if ( ! $product instanceof WC_Product ) {
+			return '';
+		}
+
+		$nearest_date = '';
+		$nearest_timestamp = PHP_INT_MAX;
+
+		// Check the product itself
+		$entries = $product->get_meta( '_yith_pos_expirations' );
+		$entries = is_array( $entries ) ? $entries : array();
+
+		foreach ( $entries as $entry ) {
+			$date_str = isset( $entry['date'] ) ? (string) $entry['date'] : '';
+			if ( ! $date_str ) { continue; }
+
+			$timestamp = strtotime( $date_str . ' 00:00:00' );
+			if ( false !== $timestamp && $timestamp < $nearest_timestamp ) {
+				$nearest_timestamp = $timestamp;
+				$nearest_date = $date_str;
+			}
+		}
+
+		// Check variations if this is a variable product
+		if ( $product->is_type( 'variable' ) ) {
+			$children = $product->get_children();
+			foreach ( $children as $child_id ) {
+				$variation = wc_get_product( $child_id );
+				if ( ! $variation ) { continue; }
+
+				$var_entries = $variation->get_meta( '_yith_pos_expirations' );
+				$var_entries = is_array( $var_entries ) ? $var_entries : array();
+
+				foreach ( $var_entries as $entry ) {
+					$date_str = isset( $entry['date'] ) ? (string) $entry['date'] : '';
+					if ( ! $date_str ) { continue; }
+
+					$timestamp = strtotime( $date_str . ' 00:00:00' );
+					if ( false !== $timestamp && $timestamp < $nearest_timestamp ) {
+						$nearest_timestamp = $timestamp;
+						$nearest_date = $date_str;
+					}
+				}
+			}
+		}
+
+		return $nearest_date;
+	}
+}
 	function yith_pos_render_exp_row( $product ) {
 		/* @var WC_Product $product */
 		$price_html   = $product->get_price_html();
-		$manage_stock = $product->managing_stock();
-		$stock_qty    = $manage_stock ? wc_stock_amount( $product->get_stock_quantity() ) : __( '—', 'yith-point-of-sale-for-woocommerce' );
 		$type_label   = ucfirst( $product->get_type() );
 
 		$product_name = $product->get_name();
@@ -92,7 +139,7 @@ if ( ! function_exists( 'yith_pos_render_exp_row' ) ) {
 		echo '<td class="column-id">' . esc_html( $product_id ) . '</td>';
 		echo '<td class="column-name">' . esc_html( $product_name ) . '</td>';
 		echo '<td class="column-type">' . esc_html( $type_label ) . '</td>';
-		echo '<td class="column-stock">' . esc_html( $stock_qty ) . '</td>';
+		echo '<td class="column-stock">' . esc_html( yith_pos_get_nearest_expiration( $product ) ?: '—' ) . '</td>';
 		echo '<td class="column-price">' . wp_kses_post( $price_html ) . '</td>';
 		echo '</tr>';
 
@@ -111,7 +158,7 @@ if ( ! function_exists( 'yith_pos_render_exp_row' ) ) {
 			if ( $children ) {
 				echo '<tr id="variations-' . esc_attr( $product_id ) . '" class="yith-pos-variation-container" style="display:none">';
 				echo '<td></td><td colspan="4">';
-				echo '<table class="widefat fixed striped yith-pos-variations-table"><thead><tr><th class="column-toggle" style="width:40px"></th><th class="column-id">' . esc_html__( 'Variation ID', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-name">' . esc_html__( 'Name', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-stock">' . esc_html__( 'Stock', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-price">' . esc_html__( 'Price', 'yith-point-of-sale-for-woocommerce' ) . '</th></tr></thead><tbody>';
+				echo '<table class="widefat fixed striped yith-pos-variations-table"><thead><tr><th class="column-toggle" style="width:40px"></th><th class="column-id">' . esc_html__( 'Variation ID', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-name">' . esc_html__( 'Name', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-stock">' . esc_html__( 'Expiration', 'yith-point-of-sale-for-woocommerce' ) . '</th><th class="column-price">' . esc_html__( 'Price', 'yith-point-of-sale-for-woocommerce' ) . '</th></tr></thead><tbody>';
 				foreach ( $children as $child_id ) {
 					$variation = wc_get_product( $child_id );
 					if ( ! $variation ) {
@@ -119,13 +166,11 @@ if ( ! function_exists( 'yith_pos_render_exp_row' ) ) {
 					}
 					$var_name     = wp_strip_all_tags( $variation->get_name() );
 					$price_html_v = $variation->get_price_html();
-					$manage_v     = $variation->managing_stock();
-					$stock_v      = $manage_v ? wc_stock_amount( $variation->get_stock_quantity() ) : __( '—', 'yith-point-of-sale-for-woocommerce' );
 					echo '<tr class="yith-pos-variation-row">';
 					echo '<td class="column-toggle"><button type="button" class="button-link yith-pos-toggle-stock" aria-expanded="false" aria-controls="var-stock-' . esc_attr( $variation->get_id() ) . '" title="Toggle expirations">🕒</button></td>';
 					echo '<td class="column-id">' . esc_html( $variation->get_id() ) . '</td>';
 					echo '<td class="column-name">' . esc_html( $var_name ) . '</td>';
-					echo '<td class="column-stock">' . esc_html( $stock_v ) . '</td>';
+					echo '<td class="column-stock">' . esc_html( yith_pos_get_nearest_expiration( $variation ) ?: '—' ) . '</td>';
 					echo '<td class="column-price">' . wp_kses_post( $price_html_v ) . '</td>';
 					echo '</tr>';
 
@@ -140,7 +185,6 @@ if ( ! function_exists( 'yith_pos_render_exp_row' ) ) {
 			}
 		}
 	}
-}
 // Helper to render expirations table (date + qty) with actions
 if ( ! function_exists( 'yith_pos_get_expirations_breakdown_html' ) ) {
     function yith_pos_get_expirations_breakdown_html( $product ) {
@@ -276,7 +320,7 @@ if ( ! function_exists( 'yith_pos_get_expirations_breakdown_html' ) ) {
 				<th class="column-id" style="width:100px"><?php echo esc_html__( 'ID', 'yith-point-of-sale-for-woocommerce' ); ?></th>
 				<th class="column-name"><?php echo esc_html__( 'Name', 'yith-point-of-sale-for-woocommerce' ); ?></th>
 				<th class="column-type" style="width:120px"><?php echo esc_html__( 'Type', 'yith-point-of-sale-for-woocommerce' ); ?></th>
-				<th class="column-stock" style="width:120px"><?php echo esc_html__( 'Stock', 'yith-point-of-sale-for-woocommerce' ); ?></th>
+				<th class="column-stock" style="width:120px"><?php echo esc_html__( 'Expiration', 'yith-point-of-sale-for-woocommerce' ); ?></th>
 				<th class="column-price" style="width:160px"><?php echo esc_html__( 'Price', 'yith-point-of-sale-for-woocommerce' ); ?></th>
 			</tr>
 		</thead>
