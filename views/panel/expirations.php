@@ -198,13 +198,33 @@ if ( ! function_exists( 'yith_pos_get_expirations_breakdown_html' ) ) {
 ?>
 <div class="wrap yith-pos-stock-wrap">
 	<?php if ( ! empty( $expired ) ) : ?>
-		<div class="notice notice-error"><p><strong><?php echo esc_html( 'Articles expirés détectés' ); ?></strong></p>
-			<ul style="margin-left:18px;">
-				<?php foreach ( $expired as $it ) : ?>
-					<li><?php echo esc_html( sprintf( '%s (ID %d) — %s : %s, %s : %d, %s : %d', $it['product'], $it['product_id'], 'Code', $it['code'], 'Qté', $it['qty'], 'Jours', $it['days'] ) ); ?> — <?php echo esc_html( sprintf( 'Date de péremption : %s', $it['date'] ) ); ?></li>
-				<?php endforeach; ?>
-			</ul>
-		</div>
+		<div class="notice notice-error">
+	    <p><strong><?php echo esc_html( 'Articles expirés détectés' ); ?></strong></p>
+	    <ul style="margin-left:18px;">
+		  <?php foreach ( $expired as $it ) : ?>
+			  <?php
+			    $product_name = wp_strip_all_tags( $it['product'] );
+			  ?>
+			  <li>
+				<?php
+				echo esc_html( sprintf(
+					'%s (ID %d) — %s : %s, %s : %d, %s : %d',
+					$product_name,
+					$it['product_id'],
+					'Code',
+					$it['code'],
+					'Qté',
+					$it['qty'],
+					'Jours',
+					$it['days']
+				) );
+				?>
+				— 
+				<?php echo esc_html( sprintf( 'Date de péremption : %s', $it['date'] ) ); ?>
+			</li>
+		<?php endforeach; ?>
+	</ul>
+  </div>
 	<?php endif; ?>
 
 	<?php if ( ! empty( $near ) ) : ?>
