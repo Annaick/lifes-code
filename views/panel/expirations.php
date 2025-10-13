@@ -228,13 +228,38 @@ if ( ! function_exists( 'yith_pos_get_expirations_breakdown_html' ) ) {
 	<?php endif; ?>
 
 	<?php if ( ! empty( $near ) ) : ?>
-		<div class="notice notice-warning"><p><strong><?php echo esc_html( 'Produits proches de la date de péremption' ); ?></strong> <?php echo esc_html( sprintf( 'Dans %d jours', $warning_days ) ); ?></p>
-			<ul style="margin-left:18px;">
-				<?php foreach ( $near as $it ) : ?>
-					<li><?php echo esc_html( sprintf( '%s (ID %d) — %s : %s, %s : %d, %s : %d', $it['product'], $it['product_id'], 'Code', $it['code'], 'Qté', $it['qty'], 'Jours', $it['days'] ) ); ?> — <?php echo esc_html( sprintf( 'Date de péremption : %s', $it['date'] ) ); ?></li>
-				<?php endforeach; ?>
-			</ul>
-		</div>
+		<div class="notice notice-warning">
+	<p>
+		<strong><?php echo esc_html( 'Produits proches de la date de péremption' ); ?></strong>
+		<?php echo esc_html( sprintf( 'Dans %d jours', $warning_days ) ); ?>
+	</p>
+	<ul style="margin-left:18px;">
+		<?php foreach ( $near as $it ) : ?>
+			<?php
+			// Clean product name
+			$product_name = html_entity_decode( wp_strip_all_tags( $it['product'] ), ENT_QUOTES, 'UTF-8' );
+			?>
+			<li>
+				<?php
+				echo esc_html( sprintf(
+					'%s (ID %d) — %s : %s, %s : %d, %s : %d',
+					$product_name,
+					$it['product_id'],
+					'Code',
+					$it['code'],
+					'Qté',
+					$it['qty'],
+					'Jours',
+					$it['days']
+				) );
+				?>
+				— 
+				<?php echo esc_html( sprintf( 'Date de péremption : %s', $it['date'] ) ); ?>
+			</li>
+		<?php endforeach; ?>
+	</ul>
+  </div>
+
 	<?php endif; ?>
 	<div style="float:right;">
 		<button type="button" class="button button-primary" id="yith-pos-open-ie-modal"><?php echo esc_html( 'Importer & Exporter' ); ?></button>
